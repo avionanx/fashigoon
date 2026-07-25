@@ -1,0 +1,50 @@
+plugins {
+  id 'java'
+  id 'org.openjfx.javafxplugin' version '0.1.0'
+  id 'java-library'
+  id 'maven-publish'
+}
+
+group = "fashigoon"
+version = "1.0-SNAPSHOT"
+
+java {
+  sourceCompatibility = targetCompatibility = JavaVersion.VERSION_25
+}
+
+compileJava.options.encoding = 'UTF-8'
+
+javafx {
+  version = "21.0.1"
+  modules = ['javafx.controls', 'javafx.fxml']
+}
+
+// This is so it picks up new builds on jitpack
+configurations.all {
+  resolutionStrategy.cacheChangingModulesFor(0, "seconds")
+}
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+  maven { url = "https://central.sonatype.com/repository/maven-snapshots/" }
+  maven { url = "https://jitpack.io" }
+}
+
+dependencies {
+  implementation "legend:lod:snapshot"
+  implementation 'com.opencsv:opencsv:5.9'
+}
+
+sourceSets {
+  main {
+    java {
+      srcDirs = ["src/main/java"]
+      exclude ".gradle", "build", "files"
+    }
+  }
+}
+
+tasks.jar {
+  exclude("*.jar")
+}
