@@ -1,2 +1,6 @@
 # Global stuff
 fashigoon.name=Fashigoon
+# Menus
+fashigoon.menu.weapon=Weapon
+fashigoon.menu.outfit=Outfit
+fashigoon.menu.attachment=Attachments

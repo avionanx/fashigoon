@@ -1,11 +1,20 @@
 package fashigoon;
 
 import fashigoon.configs.FashionConfig;
+import fashigoon.screens.CharacterCustomizationScreen;
 import legend.core.AddRegistryEvent;
 import legend.core.IoHelper;
+import legend.core.platform.input.InputAction;
+import legend.core.platform.input.InputActionRegistryEvent;
+import legend.core.platform.input.InputKey;
+import legend.core.platform.input.ScancodeInputActivation;
+import legend.game.inventory.WhichMenu;
+import legend.game.inventory.screens.MenuStack;
+import legend.game.modding.events.RenderEvent;
 import legend.game.modding.events.gamestate.GameLoadedEvent;
 import legend.game.modding.events.gamestate.NewGameEvent;
 import legend.game.modding.events.input.InputReleasedEvent;
+import legend.game.modding.events.input.RegisterDefaultInputBindingsEvent;
 import legend.game.saves.ConfigEntry;
 import legend.game.saves.ConfigRegistryEvent;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +34,9 @@ import java.util.Objects;
 import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.REGISTRIES;
+import static legend.core.GameEngine.SCRIPTS;
+import static legend.game.Menus.whichMenu_800bdc38;
+import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 
 @Mod(id = Fashigoon.MOD_ID, version = "3.0.0")
 public class Fashigoon {
@@ -35,6 +47,11 @@ public class Fashigoon {
   public static final RegistryDelegate<FashionConfig> FASHION_DATA_CONFIG = FASHIGOON_CONFIG_REGISTRAR.register("fashigoon_data", FashionConfig::new);
   private static final Registry<FashionItem> FASHION_ITEM_REGISTRY = new FashionItemRegistry();
   private static final Registrar<FashionItem, RegisterFashionItemEvent> FASHION_ITEM_REGISTRAR = new Registrar<>(FASHION_ITEM_REGISTRY, MOD_ID);
+
+  public static final Registrar<InputAction, InputActionRegistryEvent> FASHIGOON_INPUT_REGISTRAR = new Registrar<>(REGISTRIES.inputActions, MOD_ID);
+  public static final RegistryDelegate<InputAction> FASHIGOON_INPUT_CUSTOMIZATION_MENU = FASHIGOON_INPUT_REGISTRAR.register("fashigoon_customization_menu", InputAction::editable);
+
+  private final MenuStack menuStack = new MenuStack();
 
   public Fashigoon() {
     EVENTS.register(this);
@@ -97,6 +114,31 @@ public class Fashigoon {
 
   @EventListener
   public void inputReleasedHandler(final InputReleasedEvent event) {
-    System.out.println();
+    if(whichMenu_800bdc38 != WhichMenu.NONE_0) return;
+
+    if(event.action == FASHIGOON_INPUT_CUSTOMIZATION_MENU.get() && !SCRIPTS.isPaused() && !gameState_800babc8.indicatorsDisabled_4e3) {
+      SCRIPTS.pause();
+      gameState_800babc8.indicatorsDisabled_4e3 = true;
+      this.menuStack.pushScreen(new CharacterCustomizationScreen());
+    }
+  }
+
+  @EventListener
+  public void registerInputActions(final InputActionRegistryEvent event) {
+    FASHIGOON_INPUT_REGISTRAR.registryEvent(event);
+  }
+
+  @EventListener
+  public void registerInput(final RegisterDefaultInputBindingsEvent event) {
+    event.add(FASHIGOON_INPUT_CUSTOMIZATION_MENU.get(), new ScancodeInputActivation(InputKey.P));
+  }
+
+  @EventListener
+  public void renderLoop(final RenderEvent event) {
+    this.menuStack.render();
+  }
+
+  public static String getTranslationKey(final String... args) {
+    return MOD_ID + '.' + String.join(".", args);
   }
 }
