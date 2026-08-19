@@ -1,0 +1,121 @@
+package lod.fashigoon;
+
+import legend.core.Tuple;
+import legend.core.gpu.Bpp;
+import legend.core.opengl.Obj;
+import legend.core.opengl.PolyBuilder;
+import legend.core.opengl.Texture;
+import org.joml.Vector4f;
+import org.lwjgl.assimp.AIColor4D;
+import org.lwjgl.assimp.AIFace;
+import org.lwjgl.assimp.AIMaterial;
+import org.lwjgl.assimp.AIMesh;
+import org.lwjgl.assimp.AIScene;
+import org.lwjgl.assimp.AITexture;
+import org.lwjgl.assimp.AIVector3D;
+import org.lwjgl.assimp.Assimp;
+import org.lwjgl.system.MemoryStack;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.file.Path;
+import java.util.ArrayList;
+
+import static org.lwjgl.stb.STBImage.stbi_failure_reason;
+import static org.lwjgl.stb.STBImage.stbi_image_free;
+import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
+import static org.lwjgl.system.MemoryStack.stackPush;
+
+public class AssetLoader {
+  public AssetLoader() {
+
+  }
+
+  public Scene loadScene(final Path path) {
+    final ArrayList<Tuple<Obj, Integer>> meshes = new ArrayList<>();
+    Texture texture = null;
+
+    try(final AIScene scene = Assimp.aiImportFile(path.toString(), 0)) {
+      // Texture
+      if(scene.mNumTextures() != 0) {
+        final AITexture AItexture = AITexture.create(scene.mTextures().get());
+        final ByteBuffer imageBuffer = AItexture.pcDataCompressed();
+        try(final MemoryStack stack = stackPush()) {
+          final IntBuffer w = stack.mallocInt(1);
+          final IntBuffer h = stack.mallocInt(1);
+          final IntBuffer comp = stack.mallocInt(1);
+
+          final ByteBuffer data = stbi_load_from_memory(imageBuffer, w, h, comp, 3);
+          if(data == null) {
+            throw new RuntimeException("Failed to load image: " + stbi_failure_reason());
+          }
+
+          texture = Texture.create(path.toString(), textureBuilder -> textureBuilder.data(data, w.get(0), h.get(0)));
+
+          stbi_image_free(data);
+        }
+      }
+
+      // Materials
+      final ArrayList<Vector4f> materialColors = new ArrayList<>();
+      if(scene.mNumMaterials() != 0) {
+        for(int materialIndex = 0; materialIndex < scene.mNumMaterials(); materialIndex++) {
+          final AIMaterial material = AIMaterial.create(scene.mMaterials().get(materialIndex));
+          final AIColor4D color = AIColor4D.create();
+          Assimp.aiGetMaterialColor(material, Assimp.AI_MATKEY_BASE_COLOR, Assimp.aiTextureType_NONE, 0, color);
+          materialColors.add(new Vector4f(color.r(), color.g(), color.b(), color.a()));
+        }
+      }
+
+      // Mesh
+      for(int meshIndex = 0; meshIndex < scene.mNumMeshes(); meshIndex++) {
+        final PolyBuilder builder = new PolyBuilder(path.toString());
+        if(texture != null) {
+          builder.bpp(Bpp.BITS_24);
+        }
+
+        try(final AIMesh mesh = AIMesh.create(scene.mMeshes().get(meshIndex))) {
+          final AIFace.Buffer faces = mesh.mFaces();
+          final AIVector3D.Buffer vertices = mesh.mVertices();
+          final AIVector3D.Buffer normals = mesh.mNormals();
+          final AIColor4D.Buffer colours = mesh.mColors(0);
+          final AIVector3D.Buffer uvs = mesh.mTextureCoords(0);
+
+          while(faces.hasRemaining()) {
+            final AIFace face = faces.get();
+
+            for(int i = 0; i < face.mNumIndices(); i++) {
+              final int vertexIndex = face.mIndices().get(i);
+              final AIVector3D vertex = vertices.get(vertexIndex);
+              final AIVector3D normal = normals.get(vertexIndex);
+              final AIVector3D uv = uvs.get(vertexIndex);
+
+              builder.addVertex(vertex.x(), vertex.y(), vertex.z());
+              builder.normal(normal.x(), normal.y(), normal.z());
+              if(texture == null) {
+                final Vector4f colour;
+                if(colours != null) {
+                  AIColor4D color4D = colours.get(vertexIndex);
+                  colour = new Vector4f(color4D.r(), color4D.g(), color4D.b(), color4D.a());
+                } else {
+                  colour = materialColors.get(mesh.mMaterialIndex());
+                }
+                builder.rgb(colour.x * 2.0f, colour.y * 2.0f, colour.z * 2.0f);
+              } else {
+                builder.rgb(2.0f, 2.0f, 2.0f);
+                builder.uv(uv.x(), 1.0f - uv.y());
+              }
+            }
+          }
+
+          meshes.add(new Tuple<>(builder.build(), 0));
+        }
+      }
+    } catch(final Throwable t) {
+      System.err.println("Failed to load " + path);
+      t.printStackTrace(System.err);
+    }
+
+    return new Scene(meshes, texture);
+  }
+}
