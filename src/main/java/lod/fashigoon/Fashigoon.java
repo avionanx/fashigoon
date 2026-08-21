@@ -114,11 +114,11 @@ public class Fashigoon {
     final CharacterFashionData charData = fashionData.get(player.charId_272);
     final AssetLoader loader = new AssetLoader();
     if(charData != null) {
-      if(charData.slots.get(FashigoonSlots.WEAPON) != null) {
+      if(charData.slots.get(FashigoonSlots.WEAPON.getId()) != null) {
         final Path assetPath = Path.of(
           "mods", "fashigoon", "collections",
-          charData.slots.get(FashigoonSlots.WEAPON).entryId().split("-")[0],
-          charData.slots.get(FashigoonSlots.WEAPON).entryId().split("-")[1] + ".glb"
+          charData.slots.get(FashigoonSlots.WEAPON.getId()).modId(),
+          charData.slots.get(FashigoonSlots.WEAPON.getId()).entryId() + ".glb"
         ).toAbsolutePath();
         final Scene scene = loader.loadScene(assetPath);
         scene.setParent(event.model, stateIndex);
