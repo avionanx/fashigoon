@@ -22,18 +22,18 @@ public class FashionConfig extends ConfigEntry<HashMap<Integer, CharacterFashion
   }
 
   private static byte[] serialize(final HashMap<Integer, CharacterFashionData> fashionData) {
-    final FileData data = new ExpandableFileData(fashionData.size() * 6);
+    final FileData data = new ExpandableFileData(fashionData.size() * (fashionData.size() * 5));
     final IntRef offset = new IntRef();
 
     data.writeVarInt(offset, fashionData.size());
     fashionData.entrySet().forEach(entry -> {
       data.writeVarInt(offset, entry.getKey());
+      data.writeVarInt(offset, entry.getValue().slots.size());
 
-      data.writeRegistryId(offset, entry.getValue().weaponSlot);
-      data.writeRegistryId(offset, entry.getValue().outfitSlot);
-      data.writeRegistryId(offset, entry.getValue().attachment1);
-      data.writeRegistryId(offset, entry.getValue().attachment2);
-      data.writeRegistryId(offset, entry.getValue().attachment3);
+      entry.getValue().slots.forEach((slot, item) -> {
+        data.writeRegistryId(offset, slot);
+        data.writeRegistryId(offset, item);
+      });
     });
 
     return data.getBytes();
@@ -44,17 +44,23 @@ public class FashionConfig extends ConfigEntry<HashMap<Integer, CharacterFashion
     final FileData data = new FileData(in);
     final IntRef offset = new IntRef();
 
-    final int count = data.readVarInt(offset);
+    final int charCount = data.readVarInt(offset);
 
-    for(int i = 0; i < count; i++) {
+    for(int i = 0; i < charCount; i++) {
       final CharacterFashionData charData = new CharacterFashionData();
 
       final int charId = data.readVarInt(offset);
-      charData.weaponSlot = data.readRegistryId(offset);
-      charData.outfitSlot = data.readRegistryId(offset);
-      charData.attachment1 = data.readRegistryId(offset);
-      charData.attachment2 = data.readRegistryId(offset);
-      charData.attachment3 = data.readRegistryId(offset);
+      final int slotCount = data.readVarInt(offset);
+      final HashMap<RegistryId, RegistryId> slots = new HashMap<>(slotCount);
+
+      for(int slotIndex = 0; slotIndex < slotCount; slotIndex++) {
+        final RegistryId slot = data.readRegistryId(offset);
+        final RegistryId item = data.readRegistryId(offset);
+
+        slots.put(slot, item);
+      }
+
+      charData.slots = slots;
 
       fashionData.put(charId, charData);
     }

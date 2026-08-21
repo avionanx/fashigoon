@@ -2,7 +2,7 @@ package lod.fashigoon.screens;
 
 import lod.fashigoon.CharacterFashionData;
 import lod.fashigoon.FashionItem;
-import lod.fashigoon.FashionItemType;
+import lod.fashigoon.FashionSlotType;
 import legend.core.platform.input.InputAction;
 import legend.game.i18n.I18n;
 import legend.game.inventory.screens.InputPropagation;
@@ -70,8 +70,8 @@ public class CharacterCustomizationScreen extends MenuScreen {
   private void loadCharacterDataAndButtons(final int charIndex) {
     final var charData = CONFIG.getConfig(FASHION_DATA_CONFIG.get()).get(charIndex);
   }
-
-  private void showFashionInventory(final FashionItemType fashionItemType, final Button button, RegistryId registryId) {
+/*
+  private void showFashionInventory(final FashionSlotType fashionItemType, final Button button, RegistryId registryId) {
     final List<FashionItem> fashionItems = new ArrayList<>();
     for(final RegistryId id : FASHION_ITEM_REGISTRY) {
       final FashionItem item = FASHION_ITEM_REGISTRY.getEntry(id).get();
@@ -81,7 +81,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
     }
 
   }
-
+  */
   private void unload() {
     this.getStack().popScreen();
     playMenuSound(3);

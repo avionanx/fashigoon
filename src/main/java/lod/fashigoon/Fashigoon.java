@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.legendofdragoon.modloader.Mod;
 import org.legendofdragoon.modloader.events.EventListener;
+import org.legendofdragoon.modloader.events.Priority;
 import org.legendofdragoon.modloader.registries.Registrar;
 import org.legendofdragoon.modloader.registries.Registry;
 import org.legendofdragoon.modloader.registries.RegistryDelegate;
@@ -36,6 +37,7 @@ import org.legendofdragoon.modloader.registries.RegistryId;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,8 +59,8 @@ public class Fashigoon {
 
   public static final Registrar<ConfigEntry<?>, ConfigRegistryEvent> FASHIGOON_CONFIG_REGISTRAR = new Registrar<>(REGISTRIES.config, MOD_ID);
   public static final RegistryDelegate<FashionConfig> FASHION_DATA_CONFIG = FASHIGOON_CONFIG_REGISTRAR.register("fashigoon_data", FashionConfig::new);
+  public static final Registry<FashionSlot> FASHION_SLOT_REGISTRY = new FashionSlotRegistry();
   public static final Registry<FashionItem> FASHION_ITEM_REGISTRY = new FashionItemRegistry();
-  private static final Registrar<FashionItem, RegisterFashionItemEvent> FASHION_ITEM_REGISTRAR = new Registrar<>(FASHION_ITEM_REGISTRY, MOD_ID);
 
   public static final Registrar<InputAction, InputActionRegistryEvent> FASHIGOON_INPUT_REGISTRAR = new Registrar<>(REGISTRIES.inputActions, MOD_ID);
   public static final RegistryDelegate<InputAction> FASHIGOON_INPUT_CUSTOMIZATION_MENU = FASHIGOON_INPUT_REGISTRAR.register("fashigoon_customization_menu", InputAction::editable);
@@ -87,18 +89,15 @@ public class Fashigoon {
   @EventListener
   public void newGameHandler(final NewGameEvent event) {
     final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
-    for(final Integer id : event.gameState.charIds_88) {
-      fashionData.put(id, new CharacterFashionData());
+    for(int charIndex = 0; charIndex < event.gameState.charData_32c.size(); charIndex++) {
+      HashMap<RegistryId, RegistryId> slots = new HashMap<>();
+      CharacterFashionData characterFashionData = new CharacterFashionData();
+      for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
+        slots.put(slot, null);
+      }
+      characterFashionData.slots = slots;
+      fashionData.put(charIndex, characterFashionData);
     }
-  }
-
-  /**
-   * This event should walk mods/fashigoon/collections and register each collection found there
-   * @param event
-   */
-  @EventListener
-  public void gameLoadedHandler(final GameLoadedEvent event) {
-    //this.loadCollections();
   }
 
   @EventListener
@@ -115,11 +114,11 @@ public class Fashigoon {
     final CharacterFashionData charData = fashionData.get(player.charId_272);
     final AssetLoader loader = new AssetLoader();
     if(charData != null) {
-      if(charData.weaponSlot != null) {
+      if(charData.slots.get(FashigoonSlots.WEAPON) != null) {
         final Path assetPath = Path.of(
           "mods", "fashigoon", "collections",
-          charData.weaponSlot.entryId().split("-")[0],
-          charData.weaponSlot.entryId().split("-")[1] + ".glb"
+          charData.slots.get(FashigoonSlots.WEAPON).entryId().split("-")[0],
+          charData.slots.get(FashigoonSlots.WEAPON).entryId().split("-")[1] + ".glb"
         ).toAbsolutePath();
         final Scene scene = loader.loadScene(assetPath);
         scene.setParent(event.model, stateIndex);
@@ -128,7 +127,8 @@ public class Fashigoon {
     }
   }
 
-  private void loadCollections() {
+  @EventListener
+  public void registerFashionItemEventHandler(final RegisterFashionItemEvent event) {
     LOGGER.info("Registering collections");
     final Path base = Path.of("mods", "fashigoon", "collections").toAbsolutePath();
     final File[] collections = base.toFile().listFiles();
@@ -139,7 +139,7 @@ public class Fashigoon {
       try {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
-          FASHION_ITEM_REGISTRAR.register("%s-%s".formatted(collectionName, line[0]), () -> new FashionItem(FashionItemType.get(line[1])));
+          event.register(new RegistryId(collectionName, line[0]), new FashionItem(FASHION_SLOT_REGISTRY.getEntry(line[1]).get()));
         }
       } catch(final Exception e) {
         throw new RuntimeException(e);
@@ -148,12 +148,13 @@ public class Fashigoon {
   }
 
   @EventListener
-  public void registerFashionItemEventHandler(final RegisterFashionItemEvent event) {
-    this.loadCollections();
+  public void registerFashionSlotEventHandler(final RegisterFashionSlotEvent event) {
+    FashigoonSlots.register(event);
   }
 
   @EventListener
   public void registerRegistries(final AddRegistryEvent event) {
+    event.addRegistry(FASHION_SLOT_REGISTRY, RegisterFashionSlotEvent::new);
     event.addRegistry(FASHION_ITEM_REGISTRY, RegisterFashionItemEvent::new);
   }
 

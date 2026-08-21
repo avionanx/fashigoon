@@ -3,9 +3,9 @@ package lod.fashigoon;
 import org.legendofdragoon.modloader.registries.RegistryEntry;
 
 public class FashionItem extends RegistryEntry {
-  public final FashionItemType fashionItemType;
+  public final FashionSlot fashionSlot;
 
-  public FashionItem(final FashionItemType fashionItemType) {
-    this.fashionItemType = fashionItemType;
+  public FashionItem(final FashionSlot fashionSlot) {
+    this.fashionSlot = fashionSlot;
   }
 }
