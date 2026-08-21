@@ -1,5 +1,6 @@
 package lod.fashigoon;
 
+import legend.game.scripting.ScriptLifecycleEvent;
 import lod.fashigoon.configs.FashionConfig;
 import lod.fashigoon.screens.CharacterCustomizationScreen;
 import legend.core.AddRegistryEvent;
@@ -34,6 +35,7 @@ import org.legendofdragoon.modloader.registries.RegistryId;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -62,6 +64,7 @@ public class Fashigoon {
   public static final RegistryDelegate<InputAction> FASHIGOON_INPUT_CUSTOMIZATION_MENU = FASHIGOON_INPUT_REGISTRAR.register("fashigoon_customization_menu", InputAction::editable);
 
   private final MenuStack menuStack = new MenuStack();
+  private final ArrayList<Scene> scenes = new ArrayList<>();
 
   public Fashigoon() {
     EVENTS.register(this);
@@ -95,7 +98,7 @@ public class Fashigoon {
    */
   @EventListener
   public void gameLoadedHandler(final GameLoadedEvent event) {
-    this.loadCollections();
+    //this.loadCollections();
   }
 
   @EventListener
@@ -108,6 +111,21 @@ public class Fashigoon {
     final CharacterTemplate template = player.character.template;
     final boolean isDragoon = (state.getStor(0x7) & FLAG_DRAGOON) != 0;
 
+    final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
+    final CharacterFashionData charData = fashionData.get(player.charId_272);
+    final AssetLoader loader = new AssetLoader();
+    if(charData != null) {
+      if(charData.weaponSlot != null) {
+        final Path assetPath = Path.of(
+          "mods", "fashigoon", "collections",
+          charData.weaponSlot.entryId().split("-")[0],
+          charData.weaponSlot.entryId().split("-")[1] + ".glb"
+        ).toAbsolutePath();
+        final Scene scene = loader.loadScene(assetPath);
+        scene.setParent(event.model, stateIndex);
+        this.scenes.add(scene);
+      }
+    }
   }
 
   private void loadCollections() {
@@ -117,7 +135,7 @@ public class Fashigoon {
     for(final File collectionRoot : Objects.requireNonNull(collections)) {
       final String collectionName = collectionRoot.getName();
       LOGGER.info("Found collection: %s" , collectionName);
-      final Path csvPath = collectionRoot.toPath().resolve("%s.csv".formatted(collectionName));
+      final Path csvPath = collectionRoot.toPath().resolve("config.csv");
       try {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
@@ -127,6 +145,11 @@ public class Fashigoon {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  @EventListener
+  public void registerFashionItemEventHandler(final RegisterFashionItemEvent event) {
+    this.loadCollections();
   }
 
   @EventListener
@@ -158,6 +181,21 @@ public class Fashigoon {
   @EventListener
   public void renderLoop(final RenderEvent event) {
     this.menuStack.render();
+  }
+
+  @EventListener
+  public void onScriptLifecycle(final ScriptLifecycleEvent event) {
+    for(int i = 0; i < this.scenes.size(); i++) {
+      final Scene scene = this.scenes.get(i);
+
+      if(scene.getScriptStateIndex() == event.scriptIndex) {
+        if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.POST_RENDER_CALLBACK) {
+          scene.render();
+        } else if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.PRE_DEALLOCATE) {
+          scene.unload();
+        }
+      }
+    }
   }
 
   public static String getTranslationKey(final String... args) {

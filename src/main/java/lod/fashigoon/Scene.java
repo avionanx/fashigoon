@@ -23,13 +23,15 @@ public class Scene {
   private final Texture texture;
 
   private Model124 parent;
+  private int scriptStateIndex;
 
   public Scene(final ArrayList<Tuple<Obj, Integer>> mesh, final Texture texture) {
     this.mesh = mesh;
     this.texture = texture;
   }
 
-  public void reparent(final Model124 model) {
+  public void setParent(final Model124 model, final int scriptStateIndex) {
+    this.scriptStateIndex = scriptStateIndex;
     this.parent = model;
   }
 
@@ -42,6 +44,9 @@ public class Scene {
       final MV lw = new MV();
       GsGetLw(this.parent.modelParts_00[entry.b()].coord2_04, lw);
       GsSetLightMatrix(lw);
+      lw
+        .scale(800.0f)
+      ;
 
       final var queuedModel = RENDERER.queueModel(entry.a(), lw, QueuedModelStandard.class)
         .depthOffset(this.parent.zOffset_a0)
@@ -56,11 +61,15 @@ public class Scene {
     }
   };
 
-  public void delete() {
+  public void unload() {
     this.mesh.forEach(entry -> entry.a().delete());
 
     if(this.texture != null) {
       this.texture.delete();
     }
+  }
+
+  public int getScriptStateIndex() {
+    return this.scriptStateIndex;
   }
 }

@@ -4,9 +4,7 @@ import org.legendofdragoon.modloader.registries.RegistryId;
 
 import java.io.Serializable;
 
-public class CharacterFashionData implements Serializable {
-  private static final long serialVersionUID = 129348938L;
-
+public class CharacterFashionData {
   public RegistryId weaponSlot;
   public RegistryId outfitSlot;
   public RegistryId attachment1;
