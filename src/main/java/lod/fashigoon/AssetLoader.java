@@ -119,7 +119,9 @@ public class AssetLoader {
               builder.normal(normal.x(), normal.y(), normal.z());
               final Vector4f colour = materialColors.get(mesh.mMaterialIndex());
               builder.rgb(colour.x * 2.0f, colour.y * 2.0f, colour.z * 2.0f);
-              builder.uv(uv.x(), 1.0f - uv.y());
+              if(materialTextureCounts.get(materialIndex) > 0) {
+                builder.uv(uv.x(), 1.0f - uv.y());
+              }
             }
           }
 

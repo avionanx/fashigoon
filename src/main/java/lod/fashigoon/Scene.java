@@ -46,7 +46,7 @@ public class Scene {
       GsGetLw(this.parent.modelParts_00[entry.attachmentInfoStruct.getAttachmentIndex()].coord2_04, lw);
       GsSetLightMatrix(lw);
       lw
-        .scale(800.0f)
+        .scale(1000)
       ;
 
       entry.mesh.forEach(meshEntry -> {
