@@ -98,6 +98,14 @@ public class Fashigoon {
       characterFashionData.slots = slots;
       fashionData.put(charIndex, characterFashionData);
     }
+
+    debug();
+  }
+
+  void debug() {
+    final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
+    fashionData.get(0).slots.put(FashigoonSlots.WEAPON.getId(), FASHION_ITEM_REGISTRY.getEntry("tides:glowstick").getId());
+    CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
   }
 
   @EventListener
@@ -121,6 +129,7 @@ public class Fashigoon {
           charData.slots.get(FashigoonSlots.WEAPON.getId()).entryId() + ".glb"
         ).toAbsolutePath();
         final Scene scene = loader.loadScene(assetPath);
+        player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
         scene.setParent(event.model, stateIndex);
         this.scenes.add(scene);
       }

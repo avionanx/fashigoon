@@ -7,6 +7,7 @@ import legend.core.gte.MV;
 import legend.core.opengl.Obj;
 import legend.core.opengl.Texture;
 import legend.game.types.Model124;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.ArrayList;
 
@@ -19,15 +20,15 @@ import static legend.game.Graphics.lightDirectionMatrix_800c34e8;
 
 
 public class Scene {
-  private final ArrayList<Tuple<Obj, Integer>> mesh;
-  private final Texture texture;
+  private final ArrayList<Model> model;
+  private final ArrayList<Texture> textures;
 
   private Model124 parent;
   private int scriptStateIndex;
 
-  public Scene(final ArrayList<Tuple<Obj, Integer>> mesh, final Texture texture) {
-    this.mesh = mesh;
-    this.texture = texture;
+  public Scene(final ArrayList<Model> model, final ArrayList<Texture> textures) {
+    this.model = model;
+    this.textures = textures;
   }
 
   public void setParent(final Model124 model, final int scriptStateIndex) {
@@ -36,40 +37,49 @@ public class Scene {
   }
 
   public void render() {
-    for(int entryIndex = 0; entryIndex < this.mesh.size(); entryIndex++) {
-      final Tuple<Obj, Integer> entry = this.mesh.get(entryIndex);
+    for(int entryIndex = 0; entryIndex < this.model.size(); entryIndex++) {
+      final Model entry = this.model.get(entryIndex);
 
-      this.parent.modelParts_00[entry.b()].coord2_04.flg = 0;
+      this.parent.modelParts_00[entry.attachmentInfoStruct.getAttachmentIndex()].coord2_04.flg = 0;
 
       final MV lw = new MV();
-      GsGetLw(this.parent.modelParts_00[entry.b()].coord2_04, lw);
+      GsGetLw(this.parent.modelParts_00[entry.attachmentInfoStruct.getAttachmentIndex()].coord2_04, lw);
       GsSetLightMatrix(lw);
       lw
         .scale(800.0f)
       ;
 
-      final var queuedModel = RENDERER.queueModel(entry.a(), lw, QueuedModelStandard.class)
-        .depthOffset(this.parent.zOffset_a0)
-        .lightDirection(lightDirectionMatrix_800c34e8)
-        .lightColour(lightColourMatrix_800c3508)
-        .backgroundColour(GTE.backgroundColour)
-        ;
+      entry.mesh.forEach(meshEntry -> {
+        final var queuedModel = RENDERER.queueModel(meshEntry.a(), lw, QueuedModelStandard.class)
+          .depthOffset(this.parent.zOffset_a0)
+          .lightDirection(lightDirectionMatrix_800c34e8)
+          .lightColour(lightColourMatrix_800c3508)
+          .backgroundColour(GTE.backgroundColour)
+          ;
 
-      if(this.texture != null) {
-        queuedModel.texture(this.texture);
-      }
+        if(meshEntry.b() != -1) {
+          queuedModel.texture(this.textures.get(meshEntry.b()));
+        }
+      });
     }
   };
 
   public void unload() {
-    this.mesh.forEach(entry -> entry.a().delete());
-
-    if(this.texture != null) {
-      this.texture.delete();
-    }
+    this.model.forEach(entry -> entry.mesh.forEach(meshEntry -> meshEntry.a().delete()));
+    this.textures.forEach(Texture::delete);
   }
 
   public int getScriptStateIndex() {
     return this.scriptStateIndex;
+  }
+
+  public long getReplacementFlags() {
+    int flags = 0;
+    for(final Model model : this.model) {
+      if(model.attachmentInfoStruct.isReplacement()) {
+        flags |= 0x1L << model.attachmentInfoStruct.getAttachmentIndex();
+      }
+    }
+    return flags;
   }
 }
