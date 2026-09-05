@@ -1,6 +1,8 @@
 package lod.fashigoon;
 
+import legend.game.modding.events.engine.EngineStateChangeEvent;
 import legend.game.scripting.ScriptLifecycleEvent;
+import legend.lodmod.LodEngineStateTypes;
 import lod.fashigoon.configs.FashionConfig;
 import lod.fashigoon.screens.CharacterCustomizationScreen;
 import legend.core.AddRegistryEvent;
@@ -104,7 +106,8 @@ public class Fashigoon {
 
   void debug() {
     final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
-    fashionData.get(0).slots.put(FashigoonSlots.WEAPON.getId(), FASHION_ITEM_REGISTRY.getEntry("tides:glowstick").getId());
+    //fashionData.get(0).slots.put(FashigoonSlots.ATTACHMENT_1.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:sunglasses").getId());
+    fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").getId());
     CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
   }
 
@@ -122,16 +125,18 @@ public class Fashigoon {
     final CharacterFashionData charData = fashionData.get(player.charId_272);
     final AssetLoader loader = new AssetLoader();
     if(charData != null) {
-      if(charData.slots.get(FashigoonSlots.WEAPON.getId()) != null) {
-        final Path assetPath = Path.of(
-          "mods", "fashigoon", "collections",
-          charData.slots.get(FashigoonSlots.WEAPON.getId()).modId(),
-          charData.slots.get(FashigoonSlots.WEAPON.getId()).entryId() + ".glb"
-        ).toAbsolutePath();
-        final Scene scene = loader.loadScene(assetPath);
-        player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
-        scene.setParent(event.model, stateIndex);
-        this.scenes.add(scene);
+      for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
+        if(charData.slots.get(slot) != null) {
+          final Path assetPath = Path.of(
+            "mods", "fashigoon", "collections",
+            charData.slots.get(slot).modId(),
+            charData.slots.get(slot).entryId() + ".glb"
+          ).toAbsolutePath();
+          final Scene scene = loader.loadScene(assetPath);
+          player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
+          scene.setParent(event.model, stateIndex);
+          this.scenes.add(scene);
+        }
       }
     }
   }
@@ -148,7 +153,7 @@ public class Fashigoon {
       try {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
-          event.register(new RegistryId(collectionName, line[0]), new FashionItem(FASHION_SLOT_REGISTRY.getEntry(line[1]).get()));
+          event.register(new RegistryId(collectionName, line[0]), new FashionItem(FashionSlotType.get(line[1])));
         }
       } catch(final Exception e) {
         throw new RuntimeException(e);
@@ -205,6 +210,13 @@ public class Fashigoon {
           scene.unload();
         }
       }
+    }
+  }
+
+  @EventListener
+  public void engineStateChangedHandler(final EngineStateChangeEvent event) {
+    if(event.oldEngineState == LodEngineStateTypes.BATTLE.get()) {
+      this.scenes.clear();
     }
   }
 

@@ -2,9 +2,11 @@ package lod.fashigoon;
 
 import legend.core.Tuple;
 import legend.core.gpu.Bpp;
-import legend.core.opengl.Obj;
-import legend.core.opengl.PolyBuilder;
-import legend.core.opengl.Texture;
+import legend.core.renderer.Obj;
+import legend.core.renderer.PolyBuilder;
+import legend.core.renderer.Texture;
+import legend.core.renderer.TextureDataFormat;
+import legend.core.renderer.VertexOrder;
 import org.apache.commons.lang3.tuple.Triple;
 import org.joml.Vector4f;
 import org.lwjgl.assimp.AIColor4D;
@@ -58,7 +60,13 @@ public class AssetLoader {
             throw new RuntimeException("Failed to load image: " + stbi_failure_reason());
           }
 
-          textures.add(Texture.create(path.toString(), textureBuilder -> textureBuilder.data(data, w.get(0), h.get(0))));
+          textures.add(
+            Texture.create(path.toString(),
+              textureBuilder -> {
+              textureBuilder.data(data, w.get(0), h.get(0));
+              textureBuilder.dataFormat(TextureDataFormat.RGB);
+            })
+          );
 
           stbi_image_free(data);
         }
@@ -92,7 +100,7 @@ public class AssetLoader {
       final ArrayList<Integer> meshMaterialIndices = new ArrayList<>();
       // Mesh
       for(int meshIndex = 0; meshIndex < scene.mNumMeshes(); meshIndex++) {
-        final PolyBuilder builder = new PolyBuilder(path.toString(), GL_TRIANGLES);
+        final PolyBuilder builder = new PolyBuilder(path.toString(), VertexOrder.TRIANGLES);
 
         try(final AIMesh mesh = AIMesh.create(scene.mMeshes().get(meshIndex))) {
           final int materialIndex = mesh.mMaterialIndex();

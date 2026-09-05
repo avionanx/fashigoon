@@ -1,13 +1,9 @@
 package lod.fashigoon;
 
-import legend.core.QueuedModelStandard;
-import legend.core.Tuple;
-import legend.core.gte.GsCOORDINATE2;
+import legend.core.renderer.QueuedModelStandard;
 import legend.core.gte.MV;
-import legend.core.opengl.Obj;
-import legend.core.opengl.Texture;
+import legend.core.renderer.Texture;
 import legend.game.types.Model124;
-import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.ArrayList;
 

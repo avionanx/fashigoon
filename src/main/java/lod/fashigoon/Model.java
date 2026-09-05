@@ -1,7 +1,7 @@
 package lod.fashigoon;
 
 import legend.core.Tuple;
-import legend.core.opengl.Obj;
+import legend.core.renderer.Obj;
 
 import java.util.ArrayList;
 
