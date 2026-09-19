@@ -12,6 +12,7 @@ import legend.game.inventory.screens.MenuScreen;
 import legend.game.ui.UiBox;
 import lod.fashigoon.Fashigoon;
 import lod.fashigoon.FashigoonSlots;
+import lod.fashigoon.FashionItem;
 import lod.fashigoon.controls.ItemSlotButton;
 import org.jetbrains.annotations.NotNull;
 import org.legendofdragoon.modloader.registries.RegistryId;
@@ -102,10 +103,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
     this.clearButtons();
 
     charData.slots.forEach((slotId, itemId) -> {
-      final I18nText buttonText = new I18nText(itemId == null ?
-        Fashigoon.getTranslationKey("menu", "none") :
-        FASHION_ITEM_REGISTRY.getEntry(itemId).get().getNameTranslationKey()
-      );
+      final FashionItem fashionItem = itemId == null ? null : FASHION_ITEM_REGISTRY.getEntry(itemId).get();
       // TODO fix this awful thing
       int y = 0;
       final var slotDelegate = FASHION_SLOT_REGISTRY.getEntry(slotId);
@@ -122,14 +120,11 @@ public class CharacterCustomizationScreen extends MenuScreen {
         y = 165;
       }
 
-      final ItemSlotButton button = this.addButton(buttonText, 58, y, () -> {
+      final ItemSlotButton button = this.addButton(fashionItem, 58, y, () -> {
         this.getStack().pushScreen(new FashionItemListScreen(this.currentCharIndex, slotDelegate.get().fashionItemType,
           newItemId -> {
-            final I18nText newButtonText = new I18nText(newItemId == null ?
-              Fashigoon.getTranslationKey("menu", "none") :
-              FASHION_ITEM_REGISTRY.getEntry(newItemId).get().getNameTranslationKey()
-            );
-            ((ItemSlotButton)this.getFocus()).setText(newButtonText);
+            final FashionItem newItem = FASHION_ITEM_REGISTRY.getEntry(newItemId).get();
+            ((ItemSlotButton)this.getFocus()).setItem(newItem);
             charData.slots.put(slotId, newItemId);
             },
           this::updateDescriptionText
@@ -139,7 +134,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
       button.onHoverIn(() -> {
         playMenuSound(1);
         this.setFocus(button);
-        this.updateDescriptionText(itemId);
+        this.updateDescriptionText(button.getItem());
       });
     });
   }
@@ -151,8 +146,8 @@ public class CharacterCustomizationScreen extends MenuScreen {
     SCRIPTS.resume();
   }
 
-  private ItemSlotButton addButton(final TextComponent textComponent, final int x, final int y, final Runnable onClick) {
-    final ItemSlotButton button = this.addControl(new ItemSlotButton(textComponent));
+  private ItemSlotButton addButton(final FashionItem fashionItem, final int x, final int y, final Runnable onClick) {
+    final ItemSlotButton button = this.addControl(new ItemSlotButton(fashionItem));
     button.setPos(x, y);
     button.setZ(1);
     button.setWidth(80);
@@ -163,9 +158,9 @@ public class CharacterCustomizationScreen extends MenuScreen {
     return button;
   }
 
-  private void updateDescriptionText(final RegistryId itemId) {
-    if(itemId != null) {
-      this.descriptionTranslationKey = FASHION_ITEM_REGISTRY.getEntry(itemId).get().getDescriptionTranslationKey();
+  private void updateDescriptionText(final FashionItem item) {
+    if(item != null) {
+      this.descriptionTranslationKey = item.getDescriptionTranslationKey();
     } else {
       this.descriptionTranslationKey = null;
     }

@@ -28,26 +28,25 @@ public class FashionItemListScreen extends MenuScreen {
   private ArrayList<ItemSlotButton> itemButtons = new ArrayList<>();
   private FashionSlotType slotType;
 
-  public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<RegistryId> equipCall, final Consumer<RegistryId> updateDescriptionText) {
+  public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<RegistryId> equipCall, final Consumer<FashionItem> updateDescriptionText) {
     this.slotType = slotType;
 
     int y = 68;
     for(final RegistryId itemId : FASHION_ITEM_REGISTRY) {
       final FashionItem fashionItem = FASHION_ITEM_REGISTRY.getEntry(itemId).get();
+
       if(fashionItem.characterType == gameState_800babc8.charData_32c.get(charIndex).template && fashionItem.slotType == slotType) {
-        final I18nText buttonText = new I18nText(itemId == null ?
-          Fashigoon.getTranslationKey("menu", "none") :
-          FASHION_ITEM_REGISTRY.getEntry(itemId).get().getNameTranslationKey()
-        );
-        final ItemSlotButton button = this.addButton(buttonText, 180, y, () -> {
+        final ItemSlotButton button = this.addButton(fashionItem, 180, y, () -> {
           this.deferAction(this::unload);
           equipCall.accept(itemId);
         });
+
         button.onHoverIn(() -> {
           playMenuSound(1);
           this.setFocus(button);
-          updateDescriptionText.accept(itemId);
+          updateDescriptionText.accept(fashionItem);
         });
+
         y += 20;
       }
     }
@@ -82,8 +81,8 @@ public class FashionItemListScreen extends MenuScreen {
     playMenuSound(3);
   }
 
-  private ItemSlotButton addButton(final TextComponent textComponent, final int x, final int y, final Runnable onClick) {
-    final ItemSlotButton button = this.addControl(new ItemSlotButton(textComponent));
+  private ItemSlotButton addButton(final FashionItem fashionItem, final int x, final int y, final Runnable onClick) {
+    final ItemSlotButton button = this.addControl(new ItemSlotButton(fashionItem));
     button.setPos(x, y);
     button.setZ(1);
     button.setWidth(80);
