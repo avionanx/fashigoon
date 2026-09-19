@@ -57,15 +57,14 @@ public class FashionConfig extends ConfigEntry<HashMap<Integer, CharacterFashion
 
       final int charId = data.readVarInt(offset);
       final int slotCount = data.readVarInt(offset);
-      final HashMap<FashionSlot, FashionItem> slots = new HashMap<>(slotCount);
+      final HashMap<RegistryId, RegistryId> slots = new HashMap<>(slotCount);
 
       for(int slotIndex = 0; slotIndex < slotCount; slotIndex++) {
         // TODO Slots should not be null, handle null case somehow? in case slots got added afterwards
-        final FashionSlot slot = FASHION_SLOT_REGISTRY.getEntry(data.readRegistryId(offset)).get();
+        final RegistryId slotRegistryId = data.readRegistryId(offset);
+        final RegistryId itemRegistryId = data.readRegistryId(offset);
 
-        final RegistryId itemRegistry = data.readRegistryId(offset);
-        final FashionItem item = itemRegistry == null ? null : FASHION_ITEM_REGISTRY.getEntry(itemRegistry).get();
-        slots.put(slot, item);
+        slots.put(slotRegistryId, itemRegistryId);
       }
 
       charData.slots = slots;

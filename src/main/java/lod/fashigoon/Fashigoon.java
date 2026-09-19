@@ -95,10 +95,10 @@ public class Fashigoon {
   public void newGameHandler(final NewGameEvent event) {
     final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
     for(int charIndex = 0; charIndex < event.gameState.charData_32c.size(); charIndex++) {
-      HashMap<FashionSlot, FashionItem> slots = new HashMap<>();
+      HashMap<RegistryId, RegistryId> slots = new HashMap<>();
       CharacterFashionData characterFashionData = new CharacterFashionData();
       for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
-        slots.put(FASHION_SLOT_REGISTRY.getEntry(slot).get(), null);
+        slots.put(FASHION_SLOT_REGISTRY.getEntry(slot).getId(), null);
       }
 
       characterFashionData.slots = slots;
@@ -106,13 +106,12 @@ public class Fashigoon {
     }
 
     debug();
-    System.out.println();
   }
 
   void debug() {
     final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
     //fashionData.get(0).slots.put(FashigoonSlots.ATTACHMENT_1.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:sunglasses").getId());
-    fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.get(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").get());
+    fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").getId());
     //CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
     System.out.println();
   }
@@ -135,8 +134,8 @@ public class Fashigoon {
         if(charData.slots.get(slot) != null) {
           final Path assetPath = Path.of(
             "mods", "fashigoon", "collections",
-            charData.slots.get(slot).getRegistryId().modId(),
-            charData.slots.get(slot).getRegistryId().entryId() + ".glb"
+            charData.slots.get(slot).modId(),
+            charData.slots.get(slot).entryId() + ".glb"
           ).toAbsolutePath();
           final Scene scene = loader.loadScene(assetPath);
           player.model_148.partInvisible_f4 |= scene.getReplacementFlags();

@@ -2,11 +2,9 @@ package lod.fashigoon.controls;
 
 import legend.core.lang.TextComponent;
 import legend.game.inventory.screens.FontOptions;
-import legend.game.inventory.screens.HorizontalAlign;
 import legend.game.inventory.screens.TextColour;
 import legend.game.inventory.screens.controls.Button;
 
-import static legend.game.SItem.UI_TEXT;
 import static legend.game.Text.renderText;
 import static legend.game.Text.textZ_800bdf00;
 
@@ -17,19 +15,10 @@ public class ItemSlotButton extends Button {
   private FontOptions currentFontOptions = DEFAULT;
   public ItemSlotButton(TextComponent text) {
     super(text);
+    this.removeControl(this.getControl(0));
 
     this.onGotFocus(() -> this.currentFontOptions = HOVER);
     this.onLostFocus(() -> this.currentFontOptions = DEFAULT);
-  }
-
-  @Override
-  public void hoverIn() {
-
-  }
-
-  @Override
-  public void hoverOut() {
-
   }
 
   public FontOptions getFontOptions() {

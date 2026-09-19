@@ -13,6 +13,16 @@ public class FashionItem extends RegistryEntry {
     this.characterType = characterType;
   }
 
+  @Override
+  public String getTranslationKey() {
+    return this.getTranslationKey("name");
+  }
+
+  @Override
+  public String getTranslationKey(final String type) {
+    return this.getRegistryId().modId() + '.' + this.getRegistryId().entryId() + '.' + type;
+  }
+
   public String getNameTranslationKey() {
     return this.getTranslationKey();
   }

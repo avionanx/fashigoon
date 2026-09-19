@@ -5,5 +5,5 @@ import org.legendofdragoon.modloader.registries.RegistryId;
 import java.util.HashMap;
 
 public class CharacterFashionData {
-  public HashMap<FashionSlot, FashionItem> slots;
+  public HashMap<RegistryId, RegistryId> slots;
 }
