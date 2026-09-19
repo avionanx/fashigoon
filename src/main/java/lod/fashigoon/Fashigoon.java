@@ -1,8 +1,10 @@
 package lod.fashigoon;
 
+import legend.core.GameEngine;
 import legend.game.modding.events.engine.EngineStateChangeEvent;
 import legend.game.scripting.ScriptLifecycleEvent;
 import legend.lodmod.LodEngineStateTypes;
+import legend.lodmod.LodMod;
 import lod.fashigoon.configs.FashionConfig;
 import lod.fashigoon.screens.CharacterCustomizationScreen;
 import legend.core.AddRegistryEvent;
@@ -86,29 +88,33 @@ public class Fashigoon {
 
   /**
    * For now, this event handler will initialize empty data for all charIds that exist once game starts.
+   * TODO replace with something that makes sense
    * @param event
    */
   @EventListener
   public void newGameHandler(final NewGameEvent event) {
     final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
     for(int charIndex = 0; charIndex < event.gameState.charData_32c.size(); charIndex++) {
-      HashMap<RegistryId, RegistryId> slots = new HashMap<>();
+      HashMap<FashionSlot, FashionItem> slots = new HashMap<>();
       CharacterFashionData characterFashionData = new CharacterFashionData();
       for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
-        slots.put(slot, null);
+        slots.put(FASHION_SLOT_REGISTRY.getEntry(slot).get(), null);
       }
+
       characterFashionData.slots = slots;
       fashionData.put(charIndex, characterFashionData);
     }
 
     debug();
+    System.out.println();
   }
 
   void debug() {
     final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
     //fashionData.get(0).slots.put(FashigoonSlots.ATTACHMENT_1.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:sunglasses").getId());
-    fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").getId());
-    CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
+    fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.get(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").get());
+    //CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
+    System.out.println();
   }
 
   @EventListener
@@ -129,8 +135,8 @@ public class Fashigoon {
         if(charData.slots.get(slot) != null) {
           final Path assetPath = Path.of(
             "mods", "fashigoon", "collections",
-            charData.slots.get(slot).modId(),
-            charData.slots.get(slot).entryId() + ".glb"
+            charData.slots.get(slot).getRegistryId().modId(),
+            charData.slots.get(slot).getRegistryId().entryId() + ".glb"
           ).toAbsolutePath();
           final Scene scene = loader.loadScene(assetPath);
           player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
@@ -149,11 +155,15 @@ public class Fashigoon {
     for(final File collectionRoot : Objects.requireNonNull(collections)) {
       final String collectionName = collectionRoot.getName();
       LOGGER.info("Found collection: %s" , collectionName);
+
       final Path csvPath = collectionRoot.toPath().resolve("config.csv");
+
+      GameEngine.loadLangOverrides(collectionRoot.toPath());
+
       try {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
-          event.register(new RegistryId(collectionName, line[0]), new FashionItem(FashionSlotType.get(line[1])));
+          event.register(new RegistryId(collectionName, line[0]), new FashionItem(FashionSlotType.get(line[1]), REGISTRIES.characterTemplates.getEntry(line[2]).get()));
         }
       } catch(final Exception e) {
         throw new RuntimeException(e);
@@ -222,6 +232,10 @@ public class Fashigoon {
 
   public static String getTranslationKey(final String... args) {
     return MOD_ID + '.' + String.join(".", args);
+  }
+
+  public static String getItemTranslationKey(final RegistryId item) {
+    return item.modId() + '.' + item.entryId();
   }
 
   public static float getExtraWidth() {

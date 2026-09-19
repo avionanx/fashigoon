@@ -7,6 +7,9 @@ import lod.fashigoon.CharacterFashionData;
 import legend.game.saves.ConfigCategory;
 import legend.game.saves.ConfigEntry;
 import legend.game.saves.ConfigStorageLocation;
+import lod.fashigoon.Fashigoon;
+import lod.fashigoon.FashionItem;
+import lod.fashigoon.FashionSlot;
 import org.legendofdragoon.modloader.registries.RegistryId;
 
 import java.io.ByteArrayInputStream;
@@ -15,6 +18,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
+
+import static lod.fashigoon.Fashigoon.FASHION_ITEM_REGISTRY;
+import static lod.fashigoon.Fashigoon.FASHION_SLOT_REGISTRY;
 
 public class FashionConfig extends ConfigEntry<HashMap<Integer, CharacterFashionData>> {
   public FashionConfig() {
@@ -51,12 +57,14 @@ public class FashionConfig extends ConfigEntry<HashMap<Integer, CharacterFashion
 
       final int charId = data.readVarInt(offset);
       final int slotCount = data.readVarInt(offset);
-      final HashMap<RegistryId, RegistryId> slots = new HashMap<>(slotCount);
+      final HashMap<FashionSlot, FashionItem> slots = new HashMap<>(slotCount);
 
       for(int slotIndex = 0; slotIndex < slotCount; slotIndex++) {
-        final RegistryId slot = data.readRegistryId(offset);
-        final RegistryId item = data.readRegistryId(offset);
+        // TODO Slots should not be null, handle null case somehow? in case slots got added afterwards
+        final FashionSlot slot = FASHION_SLOT_REGISTRY.getEntry(data.readRegistryId(offset)).get();
 
+        final RegistryId itemRegistry = data.readRegistryId(offset);
+        final FashionItem item = itemRegistry == null ? null : FASHION_ITEM_REGISTRY.getEntry(itemRegistry).get();
         slots.put(slot, item);
       }
 
