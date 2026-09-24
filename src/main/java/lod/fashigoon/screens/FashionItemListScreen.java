@@ -6,6 +6,7 @@ import legend.core.platform.input.InputAction;
 import legend.game.i18n.I18n;
 import legend.game.inventory.screens.InputPropagation;
 import legend.game.inventory.screens.MenuScreen;
+import lod.fashigoon.CharacterFashionData;
 import lod.fashigoon.Fashigoon;
 import lod.fashigoon.FashionItem;
 import lod.fashigoon.FashionSlotType;
@@ -16,29 +17,35 @@ import org.legendofdragoon.modloader.registries.RegistryId;
 import java.util.ArrayList;
 import java.util.function.Consumer;
 
+import static legend.core.GameEngine.CONFIG;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Text.renderText;
+import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_ADVANCED;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_BACK;
 import static legend.game.sound.Audio.playMenuSound;
+import static lod.fashigoon.Fashigoon.FASHION_DATA_CONFIG;
 import static lod.fashigoon.Fashigoon.FASHION_ITEM_REGISTRY;
 import static lod.fashigoon.Fashigoon.getTranslationKey;
 import static lod.fashigoon.screens.CharacterCustomizationScreen.UI_WHITE;
 
 public class FashionItemListScreen extends MenuScreen {
   private ArrayList<ItemSlotButton> itemButtons = new ArrayList<>();
+
+  private int charIndex;
   private FashionSlotType slotType;
 
-  public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<RegistryId> equipCall, final Consumer<FashionItem> updateDescriptionText) {
+  public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<FashionItem> equipCall, final Consumer<FashionItem> updateDescriptionText) {
+    this.charIndex = charIndex;
     this.slotType = slotType;
 
     int y = 68;
     for(final RegistryId itemId : FASHION_ITEM_REGISTRY) {
       final FashionItem fashionItem = FASHION_ITEM_REGISTRY.getEntry(itemId).get();
 
-      if(fashionItem.characterType == gameState_800babc8.charData_32c.get(charIndex).template && fashionItem.slotType == slotType) {
+      if(this.canEquip(fashionItem)) {
         final ItemSlotButton button = this.addButton(fashionItem, 180, y, () -> {
           this.deferAction(this::unload);
-          equipCall.accept(itemId);
+          equipCall.accept(fashionItem);
         });
 
         button.onHoverIn(() -> {
@@ -50,7 +57,10 @@ public class FashionItemListScreen extends MenuScreen {
         y += 20;
       }
     }
+  }
 
+  private boolean canEquip(final FashionItem item) {
+    return item.slotType == this.slotType && item.characterType == gameState_800babc8.charData_32c.get(this.charIndex).template;
   }
 
   @Override

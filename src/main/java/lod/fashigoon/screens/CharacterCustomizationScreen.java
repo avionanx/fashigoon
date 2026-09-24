@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_ADVANCED;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_LEFT;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_RIGHT;
 import static lod.fashigoon.Fashigoon.FASHION_DATA_CONFIG;
@@ -60,6 +61,11 @@ public class CharacterCustomizationScreen extends MenuScreen {
     this.contentBox = new UiBox(40, 40, 288, 150);
     this.descriptionBox = new UiBox(40, 195, 288, 24);
     this.loadCharacterDataAndButtons();
+
+    this.addHotkey(new I18nText(getTranslationKey("menu", "unequip")), INPUT_ACTION_MENU_ADVANCED, () -> {
+      playMenuSound(3);
+      this.deferAction(this::unequipItem);
+    });
   }
 
   @Override
@@ -122,10 +128,23 @@ public class CharacterCustomizationScreen extends MenuScreen {
 
       final ItemSlotButton button = this.addButton(fashionItem, 58, y, () -> {
         this.getStack().pushScreen(new FashionItemListScreen(this.currentCharIndex, slotDelegate.get().fashionItemType,
-          newItemId -> {
-            final FashionItem newItem = FASHION_ITEM_REGISTRY.getEntry(newItemId).get();
+          newItem -> {
+            // Was this item equipped elsewhere? If so, unequip from that slot
+            for(int slotIndex = 0; slotIndex < this.slotButtons.size(); slotIndex++) {
+              final ItemSlotButton slotButton = this.slotButtons.get(slotIndex);
+              if(slotButton.getItem() == newItem) {
+                slotButton.setItem(null);
+                // help
+                charData.slots.entrySet().forEach(entry -> {
+                  if(entry.getValue() == newItem.getRegistryId()) {
+                    charData.slots.put(entry.getKey(), null);
+                  }
+                });
+              }
+            }
+            // Equip item
             ((ItemSlotButton)this.getFocus()).setItem(newItem);
-            charData.slots.put(slotId, newItemId);
+            charData.slots.put(slotId, newItem.getRegistryId());
             },
           this::updateDescriptionText
           ));
@@ -163,6 +182,24 @@ public class CharacterCustomizationScreen extends MenuScreen {
       this.descriptionTranslationKey = item.getDescriptionTranslationKey();
     } else {
       this.descriptionTranslationKey = null;
+    }
+  }
+
+  private void unequipItem() {
+    if(this.getFocus() instanceof final ItemSlotButton slotButton) {
+      final FashionItem equippedItem = slotButton.getItem();
+      if(equippedItem == null) return;
+      final var charData = this.characterData.get(this.currentCharIndex);
+
+      charData.slots.entrySet().forEach(entry -> {
+        if(entry.getValue() != null) {
+          if(FASHION_ITEM_REGISTRY.getEntry(entry.getValue()).get() == equippedItem) {
+            charData.slots.put(entry.getKey(), null);
+            slotButton.setItem(null);
+            this.descriptionTranslationKey = null;
+          }
+        }
+      });
     }
   }
 }
