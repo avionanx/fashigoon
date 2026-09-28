@@ -26,10 +26,12 @@ public class FashionItemListScreen extends MenuScreen {
 
   private int charIndex;
   private FashionSlotType slotType;
+  private Consumer<FashionItem> updateDescriptionCallback;
 
-  public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<FashionItem> equipCall, final Consumer<FashionItem> updateDescriptionText) {
+  public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<FashionItem> equipCallback, final Consumer<FashionItem> updateDescriptionCallback) {
     this.charIndex = charIndex;
     this.slotType = slotType;
+    this.updateDescriptionCallback = updateDescriptionCallback;
 
     int y = 68;
     for(final RegistryId itemId : FASHION_ITEM_REGISTRY) {
@@ -38,13 +40,13 @@ public class FashionItemListScreen extends MenuScreen {
       if(this.canEquip(fashionItem)) {
         final ItemSlotButton button = this.addButton(fashionItem, 180, y, () -> {
           this.deferAction(this::unload);
-          equipCall.accept(fashionItem);
+          equipCallback.accept(fashionItem);
         });
 
         button.onHoverIn(() -> {
           playMenuSound(1);
           this.setFocus(button);
-          updateDescriptionText.accept(fashionItem);
+          updateDescriptionCallback.accept(fashionItem);
         });
 
         y += 20;
@@ -74,6 +76,7 @@ public class FashionItemListScreen extends MenuScreen {
   @Override
   protected InputPropagation inputActionPressed(@NotNull final InputAction action, final boolean repeat) {
     if(action == INPUT_ACTION_MENU_BACK.get() && !repeat) {
+      this.updateDescriptionCallback.accept(null);
       this.deferAction(this::unload);
     }
     return super.inputActionPressed(action, repeat);
