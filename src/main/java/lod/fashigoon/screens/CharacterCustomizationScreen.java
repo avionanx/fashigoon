@@ -59,7 +59,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
     this.contentBox.render();
     renderText(I18n.translate(gameState_800babc8.charData_32c.get(this.currentCharIndex).template.getTranslationKey()), 58, 50, UI_WHITE);
     if(this.descriptionTranslationKey != null) {
-      renderText(I18n.translate(this.descriptionTranslationKey), 58, 205, UI_WHITE);
+      renderText(I18n.translate(this.descriptionTranslationKey), 58, 203, UI_WHITE);
       this.descriptionBox.render();
     }
 
@@ -82,6 +82,25 @@ public class CharacterCustomizationScreen extends MenuScreen {
     else if(action == INPUT_ACTION_MENU_BACK.get() && !repeat) {
       this.deferAction(this::unload);
     }
+    /*
+    Slots are not sorted...
+    else if(action == INPUT_ACTION_MENU_UP.get() && !repeat) {
+      if(this.getFocus() != null) {
+        final int currentButtonIndex = this.slotButtons.indexOf(this.getFocus());
+        final int newButtonIndex = Math.floorMod(currentButtonIndex - 1, this.slotButtons.size());
+        this.setFocus(this.slotButtons.get(newButtonIndex));
+        playMenuSound(1);
+      }
+    }
+    else if(action == INPUT_ACTION_MENU_DOWN.get() && !repeat) {
+      if(this.getFocus() != null) {
+        final int currentButtonIndex = this.slotButtons.indexOf(this.getFocus());
+        final int newButtonIndex = (currentButtonIndex + 1) % this.slotButtons.size();
+        this.setFocus(this.slotButtons.get(newButtonIndex));
+        playMenuSound(1);
+      }
+    }
+    */
     return super.inputActionPressed(action, repeat);
   }
 
