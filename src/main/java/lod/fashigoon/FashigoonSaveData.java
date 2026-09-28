@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 
+import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static lod.fashigoon.Fashigoon.FASHION_SLOT_REGISTRY;
 
 public class FashigoonSaveData {
@@ -25,6 +26,11 @@ public class FashigoonSaveData {
     final CharacterFashionData newCharacterFashionData = this.makeCharacterFashionData(characterData2c);
     this.characterData.add(newCharacterFashionData);
     return newCharacterFashionData;
+  }
+
+  public CharacterFashionData getCharacterFashionData(final int characterIndex) {
+    final CharacterData2c characterData2c = gameState_800babc8.charData_32c.get(characterIndex);
+    return this.getCharacterFashionData(characterData2c);
   }
 
   private CharacterFashionData makeCharacterFashionData(final CharacterData2c characterData2c) {

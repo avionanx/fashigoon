@@ -1,7 +1,6 @@
 package lod.fashigoon;
 
 import legend.game.characters.CharacterTemplate;
-import legend.game.inventory.ItemStack;
 import org.legendofdragoon.modloader.registries.RegistryEntry;
 
 public class FashionItem extends RegistryEntry {

@@ -11,8 +11,6 @@ import legend.game.saves.ReadSaveDataEvent;
 import legend.game.saves.WriteSaveDataEvent;
 import legend.game.scripting.ScriptLifecycleEvent;
 import legend.lodmod.LodEngineStateTypes;
-import legend.lodmod.LodMod;
-import lod.fashigoon.configs.FashionConfig;
 import lod.fashigoon.screens.CharacterCustomizationScreen;
 import legend.core.AddRegistryEvent;
 import legend.core.IoHelper;
@@ -29,7 +27,6 @@ import legend.game.modding.coremod.CoreMod;
 import legend.game.modding.events.RenderEvent;
 import legend.game.modding.events.battle.CombatantModelLoadedEvent;
 import legend.game.modding.events.gamestate.GameLoadedEvent;
-import legend.game.modding.events.gamestate.NewGameEvent;
 import legend.game.modding.events.input.InputReleasedEvent;
 import legend.game.modding.events.input.RegisterDefaultInputBindingsEvent;
 import legend.game.saves.ConfigEntry;
@@ -39,7 +36,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.legendofdragoon.modloader.Mod;
 import org.legendofdragoon.modloader.events.EventListener;
-import org.legendofdragoon.modloader.events.Priority;
 import org.legendofdragoon.modloader.registries.Registrar;
 import org.legendofdragoon.modloader.registries.Registry;
 import org.legendofdragoon.modloader.registries.RegistryDelegate;
@@ -69,7 +65,6 @@ public class Fashigoon {
   public static final String MOD_ID = "fashigoon";
 
   public static final Registrar<ConfigEntry<?>, ConfigRegistryEvent> FASHIGOON_CONFIG_REGISTRAR = new Registrar<>(REGISTRIES.config, MOD_ID);
-  public static final RegistryDelegate<FashionConfig> FASHION_DATA_CONFIG = FASHIGOON_CONFIG_REGISTRAR.register("fashigoon_data", FashionConfig::new);
   public static final Registry<FashionSlot> FASHION_SLOT_REGISTRY = new FashionSlotRegistry();
   public static final Registry<FashionItem> FASHION_ITEM_REGISTRY = new FashionItemRegistry();
 
@@ -93,35 +88,9 @@ public class Fashigoon {
     FASHIGOON_CONFIG_REGISTRAR.registryEvent(event);
   }
 
-
-  /**
-   * For now, this event handler will initialize empty data for all charIds that exist once game starts.
-   * TODO replace with something that makes sense
-   * @param event
-   */
   @EventListener
-  public void newGameHandler(final NewGameEvent event) {
-    final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
-    for(int charIndex = 0; charIndex < event.gameState.charData_32c.size(); charIndex++) {
-      HashMap<RegistryId, RegistryId> slots = new HashMap<>();
-      CharacterFashionData characterFashionData = new CharacterFashionData();
-      for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
-        slots.put(FASHION_SLOT_REGISTRY.getEntry(slot).getId(), null);
-      }
-
-      characterFashionData.slots = slots;
-      fashionData.put(charIndex, characterFashionData);
-    }
-
-    debug();
-  }
-
-  void debug() {
-    final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
-    //fashionData.get(0).slots.put(FashigoonSlots.ATTACHMENT_1.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:sunglasses").getId());
-    fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").getId());
-    //CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
-    System.out.println();
+  public void gameLoadedHandler(final GameLoadedEvent event) {
+    FASHIGOON_SAVE_DATA = new FashigoonSaveData();
   }
 
   @EventListener
@@ -187,8 +156,7 @@ public class Fashigoon {
     final CharacterTemplate template = player.character.template;
     final boolean isDragoon = (state.getStor(0x7) & FLAG_DRAGOON) != 0;
 
-    final var fashionData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
-    final CharacterFashionData charData = fashionData.get(player.charId_272);
+    final CharacterFashionData charData = FASHIGOON_SAVE_DATA.getCharacterFashionData(player.character);
     final AssetLoader loader = new AssetLoader();
     if(charData != null) {
       for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
@@ -292,10 +260,6 @@ public class Fashigoon {
 
   public static String getTranslationKey(final String... args) {
     return MOD_ID + '.' + String.join(".", args);
-  }
-
-  public static String getItemTranslationKey(final RegistryId item) {
-    return item.modId() + '.' + item.entryId();
   }
 
   public static float getExtraWidth() {

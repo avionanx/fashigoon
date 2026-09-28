@@ -3,7 +3,6 @@ package lod.fashigoon.screens;
 import legend.core.lang.I18nText;
 import legend.game.inventory.screens.FontOptions;
 import legend.game.inventory.screens.TextColour;
-import lod.fashigoon.CharacterFashionData;
 import legend.core.platform.input.InputAction;
 import legend.game.i18n.I18n;
 import legend.game.inventory.screens.InputPropagation;
@@ -15,18 +14,15 @@ import lod.fashigoon.controls.ItemSlotButton;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_ADVANCED;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_LEFT;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_RIGHT;
-import static lod.fashigoon.Fashigoon.FASHION_DATA_CONFIG;
+import static lod.fashigoon.Fashigoon.FASHIGOON_SAVE_DATA;
 import static lod.fashigoon.Fashigoon.FASHION_ITEM_REGISTRY;
 import static lod.fashigoon.Fashigoon.FASHION_SLOT_REGISTRY;
-import static lod.fashigoon.Fashigoon.getExtraWidth;
 import static lod.fashigoon.Fashigoon.getTranslationKey;
-import static legend.core.GameEngine.CONFIG;
 import static legend.core.GameEngine.SCRIPTS;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Text.renderText;
@@ -37,10 +33,6 @@ public class CharacterCustomizationScreen extends MenuScreen {
   public static final FontOptions UI_WHITE = new FontOptions().colour(TextColour.WHITE).size(0.85f);
   public static final FontOptions UI_WHITE_SMALL = new FontOptions().colour(TextColour.WHITE).size(0.5f);
 
-
-  private final HashMap<Integer, CharacterFashionData> characterData;
-  private final List<Integer> characterIds;
-
   private int currentCharIndex = 0;
 
   private final List<ItemSlotButton> slotButtons = new ArrayList<>();
@@ -50,9 +42,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
 
   public CharacterCustomizationScreen() {
     playMenuSound(4);
-    this.characterData = CONFIG.getConfig(FASHION_DATA_CONFIG.get());
-    this.characterIds = this.characterData.keySet().stream().toList();
-    this.currentCharIndex = this.characterIds.getFirst();
+    this.currentCharIndex = 0;
 
     this.contentBox = new UiBox(40, 40, 288, 150);
     this.descriptionBox = new UiBox(40, 195, 288, 24);
@@ -82,11 +72,11 @@ public class CharacterCustomizationScreen extends MenuScreen {
   @Override
   protected InputPropagation inputActionPressed(@NotNull final InputAction action, final boolean repeat) {
     if(action == INPUT_ACTION_MENU_RIGHT.get() && !repeat) {
-      this.currentCharIndex = (this.currentCharIndex + 1) % this.characterData.size();
+      this.currentCharIndex = (this.currentCharIndex + 1) % gameState_800babc8.charData_32c.size();
       this.loadCharacterDataAndButtons();
     }
     else if(action == INPUT_ACTION_MENU_LEFT.get() && !repeat) {
-      this.currentCharIndex = Math.floorMod(this.currentCharIndex - 1, this.characterData.size());
+      this.currentCharIndex = Math.floorMod(this.currentCharIndex - 1, gameState_800babc8.charData_32c.size());
       this.loadCharacterDataAndButtons();
     }
     else if(action == INPUT_ACTION_MENU_BACK.get() && !repeat) {
@@ -101,7 +91,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
   }
 
   private void loadCharacterDataAndButtons() {
-    final var charData = this.characterData.get(this.currentCharIndex);
+    final var charData = FASHIGOON_SAVE_DATA.getCharacterFashionData(this.currentCharIndex);
     this.clearButtons();
 
     charData.slots.forEach((slotId, itemId) -> {
@@ -185,7 +175,7 @@ public class CharacterCustomizationScreen extends MenuScreen {
     if(this.getFocus() instanceof final ItemSlotButton slotButton) {
       final FashionItem equippedItem = slotButton.getItem();
       if(equippedItem == null) return;
-      final var charData = this.characterData.get(this.currentCharIndex);
+      final var charData = FASHIGOON_SAVE_DATA.getCharacterFashionData(this.currentCharIndex);
 
       charData.slots.entrySet().forEach(entry -> {
         if(entry.getValue() != null) {
