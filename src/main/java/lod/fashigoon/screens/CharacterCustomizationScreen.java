@@ -1,7 +1,6 @@
 package lod.fashigoon.screens;
 
 import legend.core.lang.I18nText;
-import legend.core.lang.TextComponent;
 import legend.game.inventory.screens.FontOptions;
 import legend.game.inventory.screens.TextColour;
 import lod.fashigoon.CharacterFashionData;
@@ -10,17 +9,14 @@ import legend.game.i18n.I18n;
 import legend.game.inventory.screens.InputPropagation;
 import legend.game.inventory.screens.MenuScreen;
 import legend.game.ui.UiBox;
-import lod.fashigoon.Fashigoon;
 import lod.fashigoon.FashigoonSlots;
 import lod.fashigoon.FashionItem;
 import lod.fashigoon.controls.ItemSlotButton;
 import org.jetbrains.annotations.NotNull;
-import org.legendofdragoon.modloader.registries.RegistryId;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_ADVANCED;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_LEFT;

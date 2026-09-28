@@ -1,7 +1,14 @@
 package lod.fashigoon;
 
 import legend.core.GameEngine;
+import legend.core.tags.ListTag;
+import legend.core.tags.MapTag;
+import legend.core.tags.RegistryIdTag;
+import legend.core.tags.Tag;
+import legend.game.characters.CharacterData2c;
 import legend.game.modding.events.engine.EngineStateChangeEvent;
+import legend.game.saves.ReadSaveDataEvent;
+import legend.game.saves.WriteSaveDataEvent;
 import legend.game.scripting.ScriptLifecycleEvent;
 import legend.lodmod.LodEngineStateTypes;
 import legend.lodmod.LodMod;
@@ -69,6 +76,7 @@ public class Fashigoon {
   public static final Registrar<InputAction, InputActionRegistryEvent> FASHIGOON_INPUT_REGISTRAR = new Registrar<>(REGISTRIES.inputActions, MOD_ID);
   public static final RegistryDelegate<InputAction> FASHIGOON_INPUT_CUSTOMIZATION_MENU = FASHIGOON_INPUT_REGISTRAR.register("fashigoon_customization_menu", InputAction::editable);
 
+  public static FashigoonSaveData FASHIGOON_SAVE_DATA;
   private final MenuStack menuStack = new MenuStack();
   private final ArrayList<Scene> scenes = new ArrayList<>();
 
@@ -114,6 +122,59 @@ public class Fashigoon {
     fashionData.get(0).slots.put(FashigoonSlots.OUTFIT.getId(), FASHION_ITEM_REGISTRY.getEntry("beta:cloud").getId());
     //CONFIG.setConfig(FASHION_DATA_CONFIG.get(), fashionData);
     System.out.println();
+  }
+
+  @EventListener
+  public void gameSaveDataHandler(final WriteSaveDataEvent event) {
+    final ListTag fashionData = new ListTag();
+
+    // Removed characters will be dropped from the save
+    for(final CharacterData2c character : gameState_800babc8.charData_32c) {
+      final MapTag charFashionData = new MapTag();
+      //charFashionData.set("type", new RegistryIdTag(character.template));
+
+      final MapTag slots = new MapTag();
+
+      final CharacterFashionData characterFashionData = FASHIGOON_SAVE_DATA.getCharacterFashionData(character);
+      characterFashionData.slots.forEach((slot, item) -> {
+        slots.set(slot.toString(), new RegistryIdTag(item));
+      });
+
+      charFashionData.set("slots", slots);
+      fashionData.add(charFashionData);
+    }
+
+    event.add(new RegistryId(MOD_ID + ':' + MOD_ID), fashionData);
+  }
+
+  @EventListener
+  public void gameLoadDataHandler(final ReadSaveDataEvent event) {
+    final FashigoonSaveData saveData = new FashigoonSaveData();
+
+    //fix this later
+    final Tag rawData = event.get(new RegistryId(MOD_ID + ':' + MOD_ID));
+    if(rawData == null) {
+      LOGGER.info("Fashigoon save data not found.");
+      return;
+    }
+
+    final ListTag fashigoonData = rawData.asList();
+
+    for(int tagIndex = 0; tagIndex < fashigoonData.size(); tagIndex++) {
+      final CharacterFashionData characterFashionData = new CharacterFashionData();
+      characterFashionData.characterData2c = gameState_800babc8.charData_32c.get(tagIndex);
+      characterFashionData.slots = new HashMap<>();
+
+      final MapTag characterFashionDataTag = fashigoonData.get(tagIndex).asMap();
+      final MapTag characterSlotsTag = characterFashionDataTag.get("slots").asMap();
+      for(final RegistryId slotId : FASHION_SLOT_REGISTRY) {
+        final RegistryId item = characterSlotsTag.get(slotId.toString()).asRegistryId().get();
+        characterFashionData.slots.put(slotId, item);
+      }
+      saveData.addCharacterFashionData(characterFashionData);
+    }
+
+    FASHIGOON_SAVE_DATA = saveData;
   }
 
   @EventListener
