@@ -140,6 +140,7 @@ public class Fashigoon {
         final RegistryId item = characterSlotsTag.get(slotId.toString()).asRegistryId().get();
         characterFashionData.slots.put(slotId, item);
       }
+
       saveData.addCharacterFashionData(characterFashionData);
     }
 
