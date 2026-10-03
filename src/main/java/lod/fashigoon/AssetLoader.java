@@ -44,6 +44,7 @@ public class AssetLoader {
     final ArrayList<Texture> textures = new ArrayList<>();
     final ArrayList<Obj> meshes = new ArrayList<>();
     final ArrayList<Model> models = new ArrayList<>();
+    final ArrayList<Material> materials = new ArrayList<>();
 
     final AIScene scene = Assimp.aiImportFile(path.toString(), 0);
     // Texture
@@ -74,11 +75,10 @@ public class AssetLoader {
 
     // Materials
     final ArrayList<Vector4f> materialColors = new ArrayList<>();
-    // Need to check material texture counts to set BPP_24
-    final ArrayList<Integer> materialTextureCounts = new ArrayList<>();
-    final ArrayList<Integer> materialTextureIndices = new ArrayList<>();
+
     if(scene.mNumMaterials() != 0) {
       for(int materialIndex = 0; materialIndex < scene.mNumMaterials(); materialIndex++) {
+        final Material sceneMaterial = new Material();
         final AIMaterial material = AIMaterial.create(scene.mMaterials().get(materialIndex));
 
         final AIColor4D color = AIColor4D.create();
@@ -86,13 +86,14 @@ public class AssetLoader {
         materialColors.add(new Vector4f(color.r(), color.g(), color.b(), color.a()));
 
         final int materialTextureCount = Assimp.aiGetMaterialTextureCount(material, Assimp.aiTextureType_DIFFUSE);
-        materialTextureCounts.add(materialTextureCount);
         try(final AIString texturePath = AIString.calloc()) {
           for(int textureIndex = 0; textureIndex < materialTextureCount; textureIndex++) {
             Assimp.aiGetMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, textureIndex, texturePath, (IntBuffer)null, null, null, null, null, null);
-            materialTextureIndices.add(Integer.parseInt(texturePath.dataString().substring(1)));
+            sceneMaterial.textureIndices.add(Integer.parseInt(texturePath.dataString().substring(1)));
           }
         }
+
+        materials.add(sceneMaterial);
       }
     }
 
@@ -104,7 +105,7 @@ public class AssetLoader {
       final AIMesh mesh = AIMesh.create(scene.mMeshes().get(meshIndex));
       final int materialIndex = mesh.mMaterialIndex();
       meshMaterialIndices.add(materialIndex);
-      if(materialTextureCounts.get(materialIndex) > 0) {
+      if(!materials.get(materialIndex).textureIndices.isEmpty()) {
         builder.bpp(Bpp.BITS_24);
       }
 
@@ -126,7 +127,7 @@ public class AssetLoader {
           builder.normal(normal.x(), normal.y(), normal.z());
           final Vector4f colour = materialColors.get(mesh.mMaterialIndex());
           builder.rgb(colour.x * 2.0f, colour.y * 2.0f, colour.z * 2.0f);
-          if(materialTextureCounts.get(materialIndex) > 0) {
+          if(!materials.get(materialIndex).textureIndices.isEmpty()) {
             builder.uv(uv.x(), 1.0f - uv.y());
           }
         }
@@ -148,8 +149,8 @@ public class AssetLoader {
       for(int meshIndex = 0; meshIndex < root.mNumMeshes(); meshIndex++) {
         final int sceneMeshIndex = root.mMeshes().get(meshIndex);
         int meshTextureIndex;
-        if(materialTextureCounts.get(meshMaterialIndices.get(sceneMeshIndex)) > 0) {
-          meshTextureIndex = materialTextureIndices.get(meshMaterialIndices.get(sceneMeshIndex));
+        if(!materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.isEmpty()) {
+          meshTextureIndex = materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.getFirst();
         } else {
           meshTextureIndex = -1;
         }
@@ -170,8 +171,8 @@ public class AssetLoader {
         for(int meshIndex = 0; meshIndex < childNode.mNumMeshes(); meshIndex++) {
           final int sceneMeshIndex = childNode.mMeshes().get(meshIndex);
           int meshTextureIndex;
-          if(materialTextureCounts.get(meshMaterialIndices.get(sceneMeshIndex)) > 0) {
-            meshTextureIndex = materialTextureIndices.get(meshMaterialIndices.get(sceneMeshIndex));
+          if(!materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.isEmpty()) {
+            meshTextureIndex = materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.getFirst();
           } else {
             meshTextureIndex = -1;
           }
@@ -207,5 +208,10 @@ public class AssetLoader {
     }
 
     return extras;
+  }
+
+  private class Material {
+    public Vector4f _colour;
+    public ArrayList<Integer> textureIndices = new ArrayList<>();
   }
 }

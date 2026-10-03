@@ -17,8 +17,10 @@ import java.util.function.Consumer;
 import static legend.game.Scus94491BpeSegment_800b.gameState_800babc8;
 import static legend.game.Text.renderText;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_BACK;
+import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_DOWN;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_LEFT;
 import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_RIGHT;
+import static legend.game.modding.coremod.CoreMod.INPUT_ACTION_MENU_UP;
 import static legend.game.sound.Audio.playMenuSound;
 import static lod.fashigoon.Fashigoon.FASHION_ITEM_REGISTRY;
 import static lod.fashigoon.Fashigoon.getTranslationKey;
@@ -97,6 +99,22 @@ public class FashionItemListScreen extends MenuScreen {
     }
     else if(action == INPUT_ACTION_MENU_LEFT.get() && !repeat) {
       this.loadPage(this.currentPage - 1);
+    }
+    else if(action == INPUT_ACTION_MENU_UP.get() && !repeat) {
+      if(this.getFocus() != null) {
+        final int currentButtonIndex = this.itemButtons.indexOf(this.getFocus());
+        final int newButtonIndex = Math.floorMod(currentButtonIndex - 1, this.itemButtons.size());
+        this.setFocus(this.itemButtons.get(newButtonIndex));
+        playMenuSound(1);
+      }
+    }
+    else if(action == INPUT_ACTION_MENU_DOWN.get() && !repeat) {
+      if(this.getFocus() != null) {
+        final int currentButtonIndex = this.itemButtons.indexOf(this.getFocus());
+        final int newButtonIndex = (currentButtonIndex + 1) % this.itemButtons.size();
+        this.setFocus(this.itemButtons.get(newButtonIndex));
+        playMenuSound(1);
+      }
     }
 
     return super.inputActionPressed(action, repeat);
