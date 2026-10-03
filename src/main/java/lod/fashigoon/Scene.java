@@ -55,6 +55,7 @@ public class Scene {
 
         if(meshEntry.b() != -1) {
           queuedModel.texture(this.textures.get(meshEntry.b()));
+          queuedModel.useTextureAlpha();
         }
       });
     }

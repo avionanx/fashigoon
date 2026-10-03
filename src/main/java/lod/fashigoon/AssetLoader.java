@@ -6,12 +6,16 @@ import legend.core.renderer.Obj;
 import legend.core.renderer.PolyBuilder;
 import legend.core.renderer.Texture;
 import legend.core.renderer.TextureDataFormat;
+import legend.core.renderer.Translucency;
 import legend.core.renderer.VertexOrder;
 import org.apache.commons.lang3.tuple.Triple;
 import org.joml.Vector4f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.PointerBuffer;
 import org.lwjgl.assimp.AIColor4D;
 import org.lwjgl.assimp.AIFace;
 import org.lwjgl.assimp.AIMaterial;
+import org.lwjgl.assimp.AIMaterialProperty;
 import org.lwjgl.assimp.AIMesh;
 import org.lwjgl.assimp.AIMetaData;
 import org.lwjgl.assimp.AINode;
@@ -24,6 +28,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -73,27 +78,37 @@ public class AssetLoader {
       }
     }
 
-    // Materials
-    final ArrayList<Vector4f> materialColors = new ArrayList<>();
-
     if(scene.mNumMaterials() != 0) {
       for(int materialIndex = 0; materialIndex < scene.mNumMaterials(); materialIndex++) {
-        final Material sceneMaterial = new Material();
-        final AIMaterial material = AIMaterial.create(scene.mMaterials().get(materialIndex));
+        final Material material = new Material();
+        final AIMaterial aiMaterial = AIMaterial.create(scene.mMaterials().get(materialIndex));
 
         final AIColor4D color = AIColor4D.create();
-        Assimp.aiGetMaterialColor(material, Assimp.AI_MATKEY_BASE_COLOR, Assimp.aiTextureType_NONE, 0, color);
-        materialColors.add(new Vector4f(color.r(), color.g(), color.b(), color.a()));
+        Assimp.aiGetMaterialColor(aiMaterial, Assimp.AI_MATKEY_BASE_COLOR, Assimp.aiTextureType_NONE, 0, color);
+        material.colour = new Vector4f(color.r(), color.g(), color.b(), color.a());
 
-        final int materialTextureCount = Assimp.aiGetMaterialTextureCount(material, Assimp.aiTextureType_DIFFUSE);
+        final AIString alphaModeStr = AIString.calloc();
+        final int result = Assimp.aiGetMaterialString(
+          aiMaterial,
+          Assimp.AI_MATKEY_GLTF_ALPHAMODE,
+          0,
+          0,
+          alphaModeStr
+        );
+        if(result == Assimp.aiReturn_SUCCESS && !alphaModeStr.dataString().equals("OPAQUE")) {
+          material.translucent = true;
+        }
+        alphaModeStr.free();
+
+        final int materialTextureCount = Assimp.aiGetMaterialTextureCount(aiMaterial, Assimp.aiTextureType_DIFFUSE);
         try(final AIString texturePath = AIString.calloc()) {
           for(int textureIndex = 0; textureIndex < materialTextureCount; textureIndex++) {
-            Assimp.aiGetMaterialTexture(material, Assimp.aiTextureType_DIFFUSE, textureIndex, texturePath, (IntBuffer)null, null, null, null, null, null);
-            sceneMaterial.textureIndices.add(Integer.parseInt(texturePath.dataString().substring(1)));
+            Assimp.aiGetMaterialTexture(aiMaterial, Assimp.aiTextureType_DIFFUSE, textureIndex, texturePath, (IntBuffer)null, null, null, null, null, null);
+            material.textureIndices.add(Integer.parseInt(texturePath.dataString().substring(1)));
           }
         }
 
-        materials.add(sceneMaterial);
+        materials.add(material);
       }
     }
 
@@ -107,6 +122,9 @@ public class AssetLoader {
       meshMaterialIndices.add(materialIndex);
       if(!materials.get(materialIndex).textureIndices.isEmpty()) {
         builder.bpp(Bpp.BITS_24);
+      }
+      if(materials.get(materialIndex).translucent) {
+        builder.translucency(Translucency.B_PLUS_F);
       }
 
       final AIFace.Buffer faces = mesh.mFaces();
@@ -125,8 +143,8 @@ public class AssetLoader {
 
           builder.addVertex(vertex.x(), vertex.y(), vertex.z());
           builder.normal(normal.x(), normal.y(), normal.z());
-          final Vector4f colour = materialColors.get(mesh.mMaterialIndex());
-          builder.rgb(colour.x * 2.0f, colour.y * 2.0f, colour.z * 2.0f);
+          final Vector4f colour = materials.get(mesh.mMaterialIndex()).colour;
+          builder.rgb(colour.x * 1.0f, colour.y * 1.0f, colour.z * 1.0f);
           if(!materials.get(materialIndex).textureIndices.isEmpty()) {
             builder.uv(uv.x(), 1.0f - uv.y());
           }
@@ -148,7 +166,7 @@ public class AssetLoader {
       final ArrayList<Tuple<Obj, Integer>> meshList = new ArrayList<>();
       for(int meshIndex = 0; meshIndex < root.mNumMeshes(); meshIndex++) {
         final int sceneMeshIndex = root.mMeshes().get(meshIndex);
-        int meshTextureIndex;
+        final int meshTextureIndex;
         if(!materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.isEmpty()) {
           meshTextureIndex = materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.getFirst();
         } else {
@@ -170,7 +188,7 @@ public class AssetLoader {
         final ArrayList<Tuple<Obj, Integer>> meshList = new ArrayList<>();
         for(int meshIndex = 0; meshIndex < childNode.mNumMeshes(); meshIndex++) {
           final int sceneMeshIndex = childNode.mMeshes().get(meshIndex);
-          int meshTextureIndex;
+          final int meshTextureIndex;
           if(!materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.isEmpty()) {
             meshTextureIndex = materials.get(meshMaterialIndices.get(sceneMeshIndex)).textureIndices.getFirst();
           } else {
@@ -211,7 +229,8 @@ public class AssetLoader {
   }
 
   private class Material {
-    public Vector4f _colour;
+    public Vector4f colour;
     public ArrayList<Integer> textureIndices = new ArrayList<>();
+    public boolean translucent;
   }
 }
