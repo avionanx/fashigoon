@@ -92,6 +92,7 @@ public class FashionItemListScreen extends MenuScreen {
   protected InputPropagation inputActionPressed(@NotNull final InputAction action, final boolean repeat) {
     if(action == INPUT_ACTION_MENU_BACK.get() && !repeat) {
       this.updateDescriptionCallback.accept(null);
+      playMenuSound(3);
       this.deferAction(this::unload);
     }
     else if(action == INPUT_ACTION_MENU_RIGHT.get() && !repeat) {
@@ -121,23 +122,25 @@ public class FashionItemListScreen extends MenuScreen {
   }
 
   private int getPageCount() {
-    return Math.ceilDiv(this.itemButtons.size(), ITEMS_PER_PAGE);
+    final int pageCount = Math.ceilDiv(this.itemButtons.size(), ITEMS_PER_PAGE);
+    return pageCount > 0 ? pageCount : 1;
   }
 
   private void loadPage(final int newPage) {
     this.itemButtons.forEach(Control::hide);
     this.currentPage = Math.floorMod(newPage, this.getPageCount());
-    final int itemCount = currentPage + 1 == this.getPageCount() ? this.itemButtons.size() - this.currentPage * ITEMS_PER_PAGE : ITEMS_PER_PAGE;
+    final int itemCount = this.currentPage + 1 == this.getPageCount() ? this.itemButtons.size() - this.currentPage * ITEMS_PER_PAGE : ITEMS_PER_PAGE;
     for(int buttonIndex = this.currentPage * ITEMS_PER_PAGE; buttonIndex < this.currentPage * ITEMS_PER_PAGE + itemCount; buttonIndex++) {
       this.itemButtons.get(buttonIndex).show();
     }
-    this.setFocus(this.itemButtons.get(this.currentPage * ITEMS_PER_PAGE));
-    this.updateDescriptionCallback.accept(this.itemButtons.get(this.currentPage * ITEMS_PER_PAGE).getItem());
+    if(!this.itemButtons.isEmpty()) {
+      this.setFocus(this.itemButtons.get(this.currentPage * ITEMS_PER_PAGE));
+      this.updateDescriptionCallback.accept(this.itemButtons.get(this.currentPage * ITEMS_PER_PAGE).getItem());
+    }
   }
 
   private void unload() {
     this.getStack().popScreen();
-    playMenuSound(3);
   }
 
   private ItemSlotButton addButton(final FashionItem fashionItem, final int x, final int y, final Runnable onClick) {

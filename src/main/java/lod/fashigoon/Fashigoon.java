@@ -10,6 +10,7 @@ import legend.game.modding.events.engine.EngineStateChangeEvent;
 import legend.game.saves.ReadSaveDataEvent;
 import legend.game.saves.WriteSaveDataEvent;
 import legend.game.scripting.ScriptLifecycleEvent;
+import legend.game.submap.SMap;
 import legend.lodmod.LodEngineStateTypes;
 import lod.fashigoon.screens.CharacterCustomizationScreen;
 import legend.core.AddRegistryEvent;
@@ -53,6 +54,7 @@ import static legend.core.GameEngine.EVENTS;
 import static legend.core.GameEngine.REGISTRIES;
 import static legend.core.GameEngine.RENDERER;
 import static legend.core.GameEngine.SCRIPTS;
+import static legend.game.EngineStates.currentEngineState_8004dd04;
 import static legend.game.Graphics.displayHeight_1f8003e4;
 import static legend.game.Graphics.displayWidth_1f8003e0;
 import static legend.game.Menus.whichMenu_800bdc38;
@@ -73,7 +75,7 @@ public class Fashigoon {
 
   public static FashigoonSaveData FASHIGOON_SAVE_DATA;
   private final MenuStack menuStack = new MenuStack();
-  private final ArrayList<Scene> scenes = new ArrayList<>();
+  private final HashMap<Integer, Scene> scenes = new HashMap<>();
 
   public Fashigoon() {
     EVENTS.register(this);
@@ -157,6 +159,16 @@ public class Fashigoon {
     final CharacterTemplate template = player.character.template;
     final boolean isDragoon = (state.getStor(0x7) & FLAG_DRAGOON) != 0;
 
+    //TODO nuke this and canRender
+    if(isDragoon) {
+      if(this.scenes.containsKey(event.combatant.charSlot_19c))
+        this.scenes.get(event.combatant.charSlot_19c).hide();
+      return;
+    } else {
+      if(this.scenes.containsKey(event.combatant.charSlot_19c))
+        this.scenes.get(event.combatant.charSlot_19c).show();
+    }
+
     final CharacterFashionData charData = FASHIGOON_SAVE_DATA.getCharacterFashionData(player.character);
     final AssetLoader loader = new AssetLoader();
     if(charData != null) {
@@ -170,7 +182,7 @@ public class Fashigoon {
           final Scene scene = loader.loadScene(assetPath);
           player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
           scene.setParent(event.model, stateIndex);
-          this.scenes.add(scene);
+          this.scenes.put(event.combatant.charSlot_19c, scene);
         }
       }
     }
@@ -215,7 +227,7 @@ public class Fashigoon {
   public void inputReleasedHandler(final InputReleasedEvent event) {
     if(whichMenu_800bdc38 != WhichMenu.NONE_0) return;
 
-    if(event.action == FASHIGOON_INPUT_CUSTOMIZATION_MENU.get() && !SCRIPTS.isPaused() && !gameState_800babc8.indicatorsDisabled_4e3) {
+    if(event.action == FASHIGOON_INPUT_CUSTOMIZATION_MENU.get() && !SCRIPTS.isPaused() && !gameState_800babc8.indicatorsDisabled_4e3 && currentEngineState_8004dd04 instanceof SMap) {
       SCRIPTS.pause();
       gameState_800babc8.indicatorsDisabled_4e3 = true;
       this.menuStack.pushScreen(new CharacterCustomizationScreen());
@@ -239,9 +251,7 @@ public class Fashigoon {
 
   @EventListener
   public void onScriptLifecycle(final ScriptLifecycleEvent event) {
-    for(int i = 0; i < this.scenes.size(); i++) {
-      final Scene scene = this.scenes.get(i);
-
+    this.scenes.values().forEach(scene -> {
       if(scene.getScriptStateIndex() == event.scriptIndex) {
         if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.POST_RENDER_CALLBACK) {
           scene.render();
@@ -249,7 +259,7 @@ public class Fashigoon {
           scene.unload();
         }
       }
-    }
+    });
   }
 
   @EventListener

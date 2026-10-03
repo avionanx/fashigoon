@@ -72,10 +72,12 @@ public class CharacterCustomizationScreen extends MenuScreen {
   @Override
   protected InputPropagation inputActionPressed(@NotNull final InputAction action, final boolean repeat) {
     if(action == INPUT_ACTION_MENU_RIGHT.get() && !repeat) {
+      playMenuSound(1);
       this.currentCharIndex = (this.currentCharIndex + 1) % gameState_800babc8.charData_32c.size();
       this.loadCharacterDataAndButtons();
     }
     else if(action == INPUT_ACTION_MENU_LEFT.get() && !repeat) {
+      playMenuSound(1);
       this.currentCharIndex = Math.floorMod(this.currentCharIndex - 1, gameState_800babc8.charData_32c.size());
       this.loadCharacterDataAndButtons();
     }

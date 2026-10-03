@@ -9,10 +9,14 @@ import java.util.ArrayList;
 
 import static legend.core.GameEngine.GTE;
 import static legend.core.GameEngine.RENDERER;
+import static legend.core.GameEngine.SCRIPTS;
 import static legend.game.Graphics.GsGetLw;
 import static legend.game.Graphics.GsSetLightMatrix;
 import static legend.game.Graphics.lightColourMatrix_800c3508;
 import static legend.game.Graphics.lightDirectionMatrix_800c34e8;
+import static legend.game.combat.bent.BattleEntity27c.FLAG_1;
+import static legend.game.combat.bent.BattleEntity27c.FLAG_HIDE;
+import static legend.game.combat.bent.BattleEntity27c.FLAG_MONSTER_SUB_PART;
 
 
 public class Scene {
@@ -21,6 +25,7 @@ public class Scene {
 
   private Model124 parent;
   private int scriptStateIndex;
+  private boolean hidden;
 
   public Scene(final ArrayList<Model> model, final ArrayList<Texture> textures) {
     this.model = model;
@@ -32,7 +37,18 @@ public class Scene {
     this.parent = model;
   }
 
+  public void show() {
+    this.hidden = false;
+  }
+
+  public void hide() {
+    this.hidden = true;
+  }
+
   public void render() {
+    if(this.hidden || SCRIPTS.getState(this.scriptStateIndex) == null || SCRIPTS.getState(this.scriptStateIndex).hasAnyFlag(FLAG_MONSTER_SUB_PART | FLAG_HIDE | FLAG_1)) {
+      return;
+    }
     for(int entryIndex = 0; entryIndex < this.model.size(); entryIndex++) {
       final Model entry = this.model.get(entryIndex);
 
