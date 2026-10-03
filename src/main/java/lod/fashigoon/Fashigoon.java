@@ -93,6 +93,8 @@ public class Fashigoon {
   @EventListener
   public void gameLoadedHandler(final GameLoadedEvent event) {
     FASHIGOON_SAVE_DATA = new FashigoonSaveData();
+
+
   }
 
   @EventListener
@@ -139,8 +141,14 @@ public class Fashigoon {
       final MapTag characterFashionDataTag = fashigoonData.get(tagIndex).asMap();
       final MapTag characterSlotsTag = characterFashionDataTag.get("slots").asMap();
       for(final RegistryId slotId : FASHION_SLOT_REGISTRY) {
-        final RegistryId item = characterSlotsTag.get(slotId.toString()).asRegistryId().get();
-        characterFashionData.slots.put(slotId, item);
+        RegistryId itemId = characterSlotsTag.get(slotId.toString()).asRegistryId().get();
+
+        // If a collection or entry was removed, unequip it when loading the game
+        if(itemId != null && !FASHION_ITEM_REGISTRY.getEntry(itemId).isValid()) {
+          LOGGER.warn("Failed to find fashion item %s on %s, unequipping.", itemId, slotId);
+          itemId = null;
+        }
+        characterFashionData.slots.put(slotId, itemId);
       }
 
       saveData.addCharacterFashionData(characterFashionData);
