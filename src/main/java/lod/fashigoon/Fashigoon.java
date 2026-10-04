@@ -37,6 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.legendofdragoon.modloader.Mod;
 import org.legendofdragoon.modloader.events.EventListener;
+import org.legendofdragoon.modloader.registries.MutableRegistry;
 import org.legendofdragoon.modloader.registries.Registrar;
 import org.legendofdragoon.modloader.registries.Registry;
 import org.legendofdragoon.modloader.registries.RegistryDelegate;
@@ -181,11 +182,12 @@ public class Fashigoon {
     final AssetLoader loader = new AssetLoader();
     if(charData != null) {
       for(final RegistryId slot : FASHION_SLOT_REGISTRY) {
-        if(charData.slots.get(slot) != null) {
+        final RegistryId item = charData.slots.get(slot);
+
+        if(item != null) {
+          final String[] keys = item.entryId().split("_", 2);
           final Path assetPath = Path.of(
-            "mods", "fashigoon", "collections",
-            charData.slots.get(slot).modId(),
-            charData.slots.get(slot).entryId() + ".glb"
+            "mods", "fashigoon", "collections", keys[0], keys[1] + ".glb"
           ).toAbsolutePath();
           final Scene scene = loader.loadScene(assetPath);
           player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
@@ -213,7 +215,7 @@ public class Fashigoon {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
           if(REGISTRIES.characterTemplates.getEntry(line[2]).isValid()) {
-            event.register(new RegistryId(collectionName, line[0]), new FashionItem(FashionSlotType.get(line[1]), REGISTRIES.characterTemplates.getEntry(line[2]).get()));
+            event.register(new RegistryId(MOD_ID, "%s_%s".formatted(collectionName, line[0])), new FashionItem(FashionSlotType.get(line[1]), REGISTRIES.characterTemplates.getEntry(line[2]).get()));
           }
         }
       } catch(final Exception e) {

@@ -19,7 +19,8 @@ public class FashionItem extends RegistryEntry {
 
   @Override
   public String getTranslationKey(final String type) {
-    return this.getRegistryId().modId() + '.' + this.getRegistryId().entryId() + '.' + type;
+    final String[] keys = this.getRegistryId().entryId().split("_", 2);
+    return keys[0] + '.' + keys[1] + '.' + type;
   }
 
   public String getNameTranslationKey() {
