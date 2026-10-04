@@ -76,7 +76,7 @@ public class Fashigoon {
 
   public static FashigoonSaveData FASHIGOON_SAVE_DATA;
   private final MenuStack menuStack = new MenuStack();
-  private final HashMap<Integer, Scene> scenes = new HashMap<>();
+  private final HashMap<Integer, ArrayList<Scene>> scenes = new HashMap<>();
 
   public Fashigoon() {
     EVENTS.register(this);
@@ -171,11 +171,15 @@ public class Fashigoon {
     //TODO nuke this and canRender
     if(isDragoon) {
       if(this.scenes.containsKey(event.combatant.charSlot_19c))
-        this.scenes.get(event.combatant.charSlot_19c).hide();
+        this.scenes.get(event.combatant.charSlot_19c).forEach(Scene::hide);
+      else
+        this.scenes.put(event.combatant.charSlot_19c, new ArrayList<>());
       return;
     } else {
       if(this.scenes.containsKey(event.combatant.charSlot_19c))
-        this.scenes.get(event.combatant.charSlot_19c).show();
+        this.scenes.get(event.combatant.charSlot_19c).forEach(Scene::show);
+      else
+        this.scenes.put(event.combatant.charSlot_19c, new ArrayList<>());
     }
 
     final CharacterFashionData charData = FASHIGOON_SAVE_DATA.getCharacterFashionData(player.character);
@@ -192,7 +196,8 @@ public class Fashigoon {
           final Scene scene = loader.loadScene(assetPath);
           player.model_148.partInvisible_f4 |= scene.getReplacementFlags();
           scene.setParent(event.model, stateIndex);
-          this.scenes.put(event.combatant.charSlot_19c, scene);
+          this.scenes.get(event.combatant.charSlot_19c).add(scene);
+          //this.scenes.put(event.combatant.charSlot_19c, scene);
         }
       }
     }
@@ -263,14 +268,16 @@ public class Fashigoon {
 
   @EventListener
   public void onScriptLifecycle(final ScriptLifecycleEvent event) {
-    this.scenes.values().forEach(scene -> {
-      if(scene.getScriptStateIndex() == event.scriptIndex) {
-        if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.POST_RENDER_CALLBACK) {
-          scene.render();
-        } else if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.PRE_DEALLOCATE) {
-          scene.unload();
+    this.scenes.values().forEach(characterScenes -> {
+      characterScenes.forEach(scene -> {
+        if(scene.getScriptStateIndex() == event.scriptIndex) {
+          if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.POST_RENDER_CALLBACK) {
+            scene.render();
+          } else if(event.getLifecycle() == ScriptLifecycleEvent.Lifecycle.PRE_DEALLOCATE) {
+            scene.unload();
+          }
         }
-      }
+      });
     });
   }
 
