@@ -6,3 +6,5 @@ fashigoon.menu.outfit=Outfit
 fashigoon.menu.attachment=Attachments
 fashigoon.menu.none=None
 fashigoon.menu.unequip=Unequip
+# Input
+fashigoon.input_actions.fashigoon_customization_menu.name=Fashigoon: Open Character Customization
