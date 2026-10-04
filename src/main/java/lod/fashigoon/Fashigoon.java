@@ -212,7 +212,9 @@ public class Fashigoon {
       try {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
-          event.register(new RegistryId(collectionName, line[0]), new FashionItem(FashionSlotType.get(line[1]), REGISTRIES.characterTemplates.getEntry(line[2]).get()));
+          if(REGISTRIES.characterTemplates.getEntry(line[2]).isValid()) {
+            event.register(new RegistryId(collectionName, line[0]), new FashionItem(FashionSlotType.get(line[1]), REGISTRIES.characterTemplates.getEntry(line[2]).get()));
+          }
         }
       } catch(final Exception e) {
         throw new RuntimeException(e);

@@ -34,7 +34,7 @@ public class FashionItemListScreen extends MenuScreen {
   private Consumer<FashionItem> updateDescriptionCallback;
 
   private int currentPage = 0;
-  private static final int ITEMS_PER_PAGE = 4;
+  private static final int ITEMS_PER_PAGE = 5;
 
   public FashionItemListScreen(final int charIndex, final FashionSlotType slotType, final Consumer<FashionItem> equipCallback, final Consumer<FashionItem> updateDescriptionCallback) {
     this.charIndex = charIndex;
