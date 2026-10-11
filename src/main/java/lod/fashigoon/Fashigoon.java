@@ -46,6 +46,7 @@ import org.legendofdragoon.modloader.registries.RegistryId;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -219,9 +220,18 @@ public class Fashigoon {
       try {
         final List<String[]> lines = IoHelper.loadCsvFile(csvPath);
         for(final String[] line : lines) {
-          if(REGISTRIES.characterTemplates.getEntry(line[2]).isValid()) {
-            event.register(new RegistryId(MOD_ID, "%s_%s".formatted(collectionName, line[0])), new FashionItem(FashionSlotType.get(line[1]), REGISTRIES.characterTemplates.getEntry(line[2]).get()));
+          final String[] entries = Arrays
+            .stream(line, 2, line.length)
+            // .filter(entry -> REGISTRIES.characterTemplates.getEntry(entry).isValid())
+            .toArray(String[]::new);
+          final ArrayList<CharacterTemplate> characterTemplates = new ArrayList<CharacterTemplate>();
+          for(final String entry : entries) {
+            if(REGISTRIES.characterTemplates.getEntry(entry).isValid()) {
+              characterTemplates.add(REGISTRIES.characterTemplates.getEntry(entry).get());
+            }
           }
+
+          event.register(new RegistryId(MOD_ID, "%s_%s".formatted(collectionName, line[0])), new FashionItem(FashionSlotType.get(line[1]), characterTemplates));
         }
       } catch(final Exception e) {
         throw new RuntimeException(e);
@@ -290,17 +300,5 @@ public class Fashigoon {
 
   public static String getTranslationKey(final String... args) {
     return MOD_ID + '.' + String.join(".", args);
-  }
-
-  public static float getExtraWidth() {
-    final boolean widescreen = RENDERER.getRenderMode() == EngineState.RenderMode.PERSPECTIVE && CONFIG.getConfig(CoreMod.ALLOW_WIDESCREEN_CONFIG.get());
-    final float fullWidth;
-    if(widescreen) {
-      fullWidth = Math.max(displayWidth_1f8003e0, RENDERER.window().getWidth() / (float)RENDERER.window().getHeight() * displayHeight_1f8003e4);
-    } else {
-      fullWidth = displayWidth_1f8003e0;
-    }
-
-    return fullWidth - displayWidth_1f8003e0;
   }
 }

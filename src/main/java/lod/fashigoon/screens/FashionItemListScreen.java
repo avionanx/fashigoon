@@ -68,7 +68,7 @@ public class FashionItemListScreen extends MenuScreen {
   }
 
   private boolean canEquip(final FashionItem item) {
-    return item.slotType == this.slotType && item.characterType == gameState_800babc8.charData_32c.get(this.charIndex).template;
+    return item.slotType == this.slotType && item.characterTypes.stream().anyMatch( template -> template == gameState_800babc8.charData_32c.get(this.charIndex).template);
   }
 
   @Override

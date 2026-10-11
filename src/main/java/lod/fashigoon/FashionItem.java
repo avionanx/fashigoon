@@ -3,13 +3,15 @@ package lod.fashigoon;
 import legend.game.characters.CharacterTemplate;
 import org.legendofdragoon.modloader.registries.RegistryEntry;
 
+import java.util.ArrayList;
+
 public class FashionItem extends RegistryEntry {
   public final FashionSlotType slotType;
-  public final CharacterTemplate characterType;
+  public final ArrayList<CharacterTemplate> characterTypes;
 
-  public FashionItem(final FashionSlotType slotType, final CharacterTemplate characterType) {
+  public FashionItem(final FashionSlotType slotType, final ArrayList<CharacterTemplate> characterTypes) {
     this.slotType = slotType;
-    this.characterType = characterType;
+    this.characterTypes = characterTypes;
   }
 
   @Override
