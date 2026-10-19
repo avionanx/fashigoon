@@ -130,6 +130,7 @@ public class AssetLoader {
       final AIFace.Buffer faces = mesh.mFaces();
       final AIVector3D.Buffer vertices = mesh.mVertices();
       final AIVector3D.Buffer normals = mesh.mNormals();
+      final AIColor4D.Buffer vertexColours = mesh.mColors(0);
       final AIVector3D.Buffer uvs = mesh.mTextureCoords(0);
 
       while(faces.hasRemaining()) {
@@ -143,8 +144,13 @@ public class AssetLoader {
 
           builder.addVertex(vertex.x(), vertex.y(), vertex.z());
           builder.normal(normal.x(), normal.y(), normal.z());
-          final Vector4f colour = materials.get(mesh.mMaterialIndex()).colour;
-          builder.rgb(colour.x * 1.0f, colour.y * 1.0f, colour.z * 1.0f);
+          if(vertexColours == null) {
+            final Vector4f colour = materials.get(mesh.mMaterialIndex()).colour;
+            builder.rgb(colour.x, colour.y , colour.z);
+          } else {
+            final AIColor4D colour = vertexColours.get(vertexIndex);
+            builder.rgb(colour.r() * 2.0f, colour.g() * 2.0f, colour.b() * 2.0f);
+          }
           if(!materials.get(materialIndex).textureIndices.isEmpty()) {
             builder.uv(uv.x(), 1.0f - uv.y());
           }
